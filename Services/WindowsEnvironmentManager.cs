@@ -15,7 +15,7 @@ public static class WindowsEnvironmentManager
         }
 
         Console.WriteLine("环境变量已更新。");
-        Console.WriteLine("请 新开终端窗口 或 重启ClaudeCode程序 使更改生效。");
+        Console.WriteLine("打开新终端窗口 或 重启ClaudeCode程序 使更改生效。");
     }
 }
 
