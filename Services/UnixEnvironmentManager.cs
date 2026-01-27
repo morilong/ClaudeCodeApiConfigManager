@@ -40,15 +40,23 @@ public static class UnixEnvironmentManager
 
         Console.WriteLine();
         Console.WriteLine("环境变量已更新。");
-        Console.WriteLine($"请运行以下命令使更改生效：");
+        Console.WriteLine("运行以下命令使更改立即生效：");
         if (shellType == ShellType.Fish)
         {
             Console.WriteLine("  source ~/.config/fish/config.fish");
         }
+        else if (shellType == ShellType.Zsh)
+        {
+            Console.WriteLine("  source ~/.zshrc");
+        }
         else
         {
-            Console.WriteLine("  source ~/.bashrc  # 或 ~/.zshrc");
+            // Bash 或 Unknown（默认为 Bash）
+            var bashrc = Path.Combine(_homeDir, ".bashrc");
+            var configFile = File.Exists(bashrc) ? "~/.bashrc" : "~/.bash_profile";
+            Console.WriteLine($"  source {configFile}");
         }
+        Console.WriteLine("或新开一个终端窗口自动生效。");
     }
 
     /// <summary>
