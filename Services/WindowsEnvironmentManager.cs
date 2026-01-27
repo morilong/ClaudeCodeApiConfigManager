@@ -1,8 +1,6 @@
 #if WINDOWS
 
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
-using ClaudeCodeApiConfigManager.Models;
 
 namespace ClaudeCodeApiConfigManager.Services;
 
@@ -11,24 +9,14 @@ namespace ClaudeCodeApiConfigManager.Services;
 /// </summary>
 public static class WindowsEnvironmentManager
 {
-    private const string EnvironmentKeyPath = @"Environment";
-
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
     private static extern bool SendNotifyMessage(int hWnd, int Msg, nint wParam, string lParam);
 
     public static void SetEnvironmentVariables(Dictionary<string, string> variables)
     {
-        // 打开当前用户的环境变量注册表项
-        using var key = Registry.CurrentUser.OpenSubKey(EnvironmentKeyPath, true);
-        if (key == null)
-        {
-            Console.Error.WriteLine("错误: 无法打开环境变量注册表项。");
-            return;
-        }
-
         foreach (var variable in variables)
         {
-            key.SetValue(variable.Key, variable.Value);
+            Environment.SetEnvironmentVariable(variable.Key, variable.Value, EnvironmentVariableTarget.User);
         }
 
         // 通知系统环境变量已更改
@@ -45,7 +33,7 @@ public static class WindowsEnvironmentManager
         const int HWND_BROADCAST = 0xFFFF;
         const int WM_SETTINGCHANGE = 0x1A;
 
-        SendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, (nint)IntPtr.Zero, "Environment");
+        SendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "Environment");
     }
 }
 
