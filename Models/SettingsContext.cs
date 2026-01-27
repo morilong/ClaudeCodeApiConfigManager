@@ -10,4 +10,5 @@ namespace ClaudeCodeApiConfigManager.Models;
 [JsonSerializable(typeof(ApiConfig))]
 [JsonSerializable(typeof(List<ApiConfig>))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
 public partial class SettingsContext : JsonSerializerContext;
