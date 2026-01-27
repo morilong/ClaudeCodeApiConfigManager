@@ -1,0 +1,51 @@
+namespace ClaudeCodeApiConfigManager.Services;
+
+/// <summary>
+/// 平台检测
+/// </summary>
+public static class Platform
+{
+    public static bool IsWindows => OperatingSystem.IsWindows();
+    public static bool IsLinux => OperatingSystem.IsLinux();
+    public static bool IsMacOS => OperatingSystem.IsMacOS();
+    public static bool IsUnix => IsLinux || IsMacOS;
+}
+
+/// <summary>
+/// 配置目录路径获取
+/// </summary>
+public static class ConfigDirectory
+{
+    public static string GetConfigDirectory()
+    {
+        string baseDir;
+
+        if (Platform.IsWindows)
+        {
+            // Windows: 使用可执行文件所在目录
+            baseDir = AppContext.BaseDirectory;
+        }
+        else
+        {
+            // Linux/macOS: ~/.config/ClaudeCodeApiConfigManager
+            baseDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".config",
+                "ClaudeCodeApiConfigManager"
+            );
+        }
+
+        // 确保目录存在
+        if (!Directory.Exists(baseDir))
+        {
+            Directory.CreateDirectory(baseDir);
+        }
+
+        return baseDir;
+    }
+
+    public static string GetSettingsFilePath()
+    {
+        return Path.Combine(GetConfigDirectory(), "settings.json");
+    }
+}
