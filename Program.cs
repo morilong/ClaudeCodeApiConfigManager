@@ -21,7 +21,6 @@ class Program
             rootCommand.AddCommand(CommandBuilder.CreateUseCommand());
             rootCommand.AddCommand(CommandBuilder.CreateCurrentCommand());
             rootCommand.AddCommand(CommandBuilder.CreateRemoveCommand());
-            rootCommand.AddCommand(CommandBuilder.CreateTestCommand());
 
             return await rootCommand.InvokeAsync(args);
         }

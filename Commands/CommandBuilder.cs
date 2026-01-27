@@ -9,7 +9,6 @@ namespace ClaudeCodeApiConfigManager.Commands;
 public static class CommandBuilder
 {
     private static readonly ConfigManager ConfigManager = new();
-    private static readonly ApiTester ApiTester = new();
 
     /// <summary>
     /// 创建 add 命令
@@ -142,30 +141,6 @@ public static class CommandBuilder
         {
             ConfigManager.RemoveConfig(name);
         }, nameArgument);
-
-        return command;
-    }
-
-    /// <summary>
-    /// 创建 test 命令
-    /// </summary>
-    public static Command CreateTestCommand()
-    {
-        var command = new Command("test", "测试当前配置的 API 连接");
-
-        command.SetHandler(async () =>
-        {
-            var config = ConfigManager.GetActiveConfig();
-            if (config == null)
-            {
-                Console.Error.WriteLine("错误: 未设置当前配置，无法测试。");
-                Console.Error.WriteLine("请使用 'ccm use <name>' 命令设置配置。");
-                return;
-            }
-
-            Console.WriteLine($"正在测试配置 '{config.Name}'...");
-            await ApiTester.TestAsync(config);
-        });
 
         return command;
     }
