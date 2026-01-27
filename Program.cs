@@ -7,7 +7,7 @@ namespace ClaudeCodeApiConfigManager;
 
 class Program
 {
-    static async Task<int> Main(string[] args)
+    static int Main(string[] args)
     {
         try
         {
@@ -26,19 +26,16 @@ class Program
                 Description = "跨平台 CLI 工具，用于管理 Claude Code API 配置。"
             };
 
-            rootCommand.AddOption(new Option<bool>(
-                aliases: new[] { "-v" },
-                description: "显示版本号"
-            ));
+            rootCommand.Options.Add(new Option<bool>("-v") { Description = "显示版本号" });
 
             // 添加子命令
-            rootCommand.AddCommand(CommandBuilder.CreateAddCommand());
-            rootCommand.AddCommand(CommandBuilder.CreateListCommand());
-            rootCommand.AddCommand(CommandBuilder.CreateUseCommand());
-            rootCommand.AddCommand(CommandBuilder.CreateCurrentCommand());
-            rootCommand.AddCommand(CommandBuilder.CreateRemoveCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateAddCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateListCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateUseCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateCurrentCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateRemoveCommand());
 
-            return await rootCommand.InvokeAsync(args);
+            return rootCommand.Parse(args).Invoke();
         }
         catch (Exception ex)
         {

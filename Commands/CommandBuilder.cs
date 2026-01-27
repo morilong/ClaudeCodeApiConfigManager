@@ -15,9 +15,13 @@ public static class CommandBuilder
     /// </summary>
     public static Command CreateAddCommand()
     {
-        var nameArgument = new Argument<string>("name", "配置名称");
-        var argsArgument = new Argument<string[]>("args", "API 配置参数 [TOKEN] [BASE_URL] [MODEL] [自定义参数...]")
+        var nameArgument = new Argument<string>("name")
         {
+            Description = "配置名称"
+        };
+        var argsArgument = new Argument<string[]>("args")
+        {
+            Description = "API 配置参数 [TOKEN] [BASE_URL] [MODEL] [自定义参数...]",
             Arity = ArgumentArity.OneOrMore
         };
 
@@ -27,8 +31,10 @@ public static class CommandBuilder
             argsArgument
         };
 
-        command.SetHandler((name, args) =>
+        command.SetAction(parseResult =>
         {
+            var name = parseResult.GetValue(nameArgument)!;
+            var args = parseResult.GetValue(argsArgument)!;
             var config = CommandHelper.ParseAddArguments(name, args);
 
             // 验证必填字段
@@ -52,7 +58,7 @@ public static class CommandBuilder
             }
 
             ConfigManager.AddOrUpdateConfig(config);
-        }, nameArgument, argsArgument);
+        });
 
         return command;
     }
@@ -63,9 +69,9 @@ public static class CommandBuilder
     public static Command CreateListCommand()
     {
         var command = new Command("list", "列出所有已保存的配置");
-        command.AddAlias("ls");
+        command.Aliases.Add("ls");
 
-        command.SetHandler(() =>
+        command.SetAction(_ =>
         {
             ConfigManager.ListConfigs();
         });
@@ -78,15 +84,19 @@ public static class CommandBuilder
     /// </summary>
     public static Command CreateUseCommand()
     {
-        var nameArgument = new Argument<string>("name", "配置名称");
+        var nameArgument = new Argument<string>("name")
+        {
+            Description = "配置名称"
+        };
 
         var command = new Command("use", "切换到指定配置")
         {
             nameArgument
         };
 
-        command.SetHandler((name) =>
+        command.SetAction(parseResult =>
         {
+            var name = parseResult.GetValue(nameArgument)!;
             var config = ConfigManager.GetConfig(name);
             if (config == null)
             {
@@ -103,7 +113,7 @@ public static class CommandBuilder
             {
                 Console.Error.WriteLine($"错误: {ex.Message}");
             }
-        }, nameArgument);
+        });
 
         return command;
     }
@@ -114,9 +124,9 @@ public static class CommandBuilder
     public static Command CreateCurrentCommand()
     {
         var command = new Command("current", "查看当前使用的配置");
-        command.AddAlias("c");
+        command.Aliases.Add("c");
 
-        command.SetHandler(() =>
+        command.SetAction(_ =>
         {
             ConfigManager.ShowCurrentConfig();
         });
@@ -129,18 +139,22 @@ public static class CommandBuilder
     /// </summary>
     public static Command CreateRemoveCommand()
     {
-        var nameArgument = new Argument<string>("name", "配置名称");
+        var nameArgument = new Argument<string>("name")
+        {
+            Description = "配置名称"
+        };
 
         var command = new Command("remove", "删除指定配置")
         {
             nameArgument
         };
-        command.AddAlias("del");
+        command.Aliases.Add("del");
 
-        command.SetHandler((name) =>
+        command.SetAction(parseResult =>
         {
+            var name = parseResult.GetValue(nameArgument)!;
             ConfigManager.RemoveConfig(name);
-        }, nameArgument);
+        });
 
         return command;
     }
