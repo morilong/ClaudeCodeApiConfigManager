@@ -33,7 +33,7 @@ public static class VersionHelper
     /// </summary>
     public static Option<bool> CreateVersionOption()
     {
-        return new Option<bool>("-v") { Description = "显示版本号" };
+        return new Option<bool>("v", ["v", "-v"]) { Description = "显示版本号" };
     }
 
     /// <summary>
@@ -41,6 +41,6 @@ public static class VersionHelper
     /// </summary>
     public static bool IsVersionRequest(string[] args)
     {
-        return args.Length == 1 && args[0] == "-v";
+        return args.Length == 1 && (args[0] == "v" || args[0] == "-v");
     }
 }
