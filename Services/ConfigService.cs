@@ -1,59 +1,19 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using ClaudeCodeApiConfigManager.Models;
 
 namespace ClaudeCodeApiConfigManager.Services;
 
 /// <summary>
-/// 配置文件管理
+/// 配置服务
 /// </summary>
-public class ConfigManager
+public class ConfigService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private readonly ConfigRepository _repository;
+    private readonly IConsoleOutput _output;
+
+    public ConfigService(ConfigRepository repository, IConsoleOutput output)
     {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-        TypeInfoResolver = SettingsContext.Default
-    };
-
-    private readonly string _settingsFilePath;
-
-    public ConfigManager()
-    {
-        _settingsFilePath = ConfigDirectory.GetSettingsFilePath();
-    }
-
-    /// <summary>
-    /// 加载配置文件
-    /// </summary>
-    public SettingsConfig LoadSettings()
-    {
-        if (!File.Exists(_settingsFilePath))
-        {
-            return new SettingsConfig();
-        }
-
-        try
-        {
-            var json = File.ReadAllText(_settingsFilePath);
-            var settings = JsonSerializer.Deserialize(json, SettingsContext.Default.SettingsConfig);
-            return settings ?? new SettingsConfig();
-        }
-        catch (JsonException)
-        {
-            Console.Error.WriteLine($"错误: 配置文件 '{_settingsFilePath}' 格式损坏。");
-            Console.Error.WriteLine($"请检查文件或删除它后重试。");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// 保存配置文件
-    /// </summary>
-    public void SaveSettings(SettingsConfig settings)
-    {
-        var json = JsonSerializer.Serialize(settings, SettingsContext.Default.SettingsConfig);
-        File.WriteAllText(_settingsFilePath, json);
+        _repository = repository;
+        _output = output;
     }
 
     /// <summary>
@@ -61,18 +21,18 @@ public class ConfigManager
     /// </summary>
     public bool AddOrUpdateConfig(ApiConfig config, bool forceOverwrite = false)
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         var existingIndex = settings.Configs.FindIndex(c => c.Name == config.Name);
 
         if (existingIndex >= 0)
         {
             if (!forceOverwrite)
             {
-                Console.Write($"配置 '{config.Name}' 已存在。是否覆盖？(y/N): ");
-                var response = Console.ReadLine()?.Trim().ToLower();
+                _output.Write($"配置 '{config.Name}' 已存在。是否覆盖？(y/N): ");
+                var response = _output.ReadLine()?.Trim().ToLower();
                 if (response != "y" && response != "yes")
                 {
-                    Console.WriteLine("操作已取消。");
+                    _output.WriteLine("操作已取消。");
                     return false;
                 }
             }
@@ -83,8 +43,8 @@ public class ConfigManager
             settings.Configs.Add(config);
         }
 
-        SaveSettings(settings);
-        Console.WriteLine($"配置 '{config.Name}' 已成功添加。");
+        _repository.Save(settings);
+        _output.WriteLine($"配置 '{config.Name}' 已成功添加。");
         return true;
     }
 
@@ -93,12 +53,12 @@ public class ConfigManager
     /// </summary>
     public bool RemoveConfig(string name)
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         var config = settings.Configs.Find(c => c.Name == name);
 
         if (config == null)
         {
-            Console.Error.WriteLine($"错误: 配置 '{name}' 不存在。");
+            _output.WriteError($"错误: 配置 '{name}' 不存在。");
             return false;
         }
 
@@ -108,14 +68,14 @@ public class ConfigManager
         if (settings.ActiveConfigName == name)
         {
             settings.ActiveConfigName = null;
-            Console.WriteLine($"已删除当前活动配置 '{name}'。");
+            _output.WriteLine($"已删除当前活动配置 '{name}'。");
         }
         else
         {
-            Console.WriteLine($"配置 '{name}' 已删除。");
+            _output.WriteLine($"配置 '{name}' 已删除。");
         }
 
-        SaveSettings(settings);
+        _repository.Save(settings);
         return true;
     }
 
@@ -124,7 +84,7 @@ public class ConfigManager
     /// </summary>
     public List<ApiConfig> GetAllConfigs()
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         return settings.Configs;
     }
 
@@ -133,7 +93,7 @@ public class ConfigManager
     /// </summary>
     public ApiConfig? GetConfig(string name)
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         return settings.Configs.Find(c => c.Name == name);
     }
 
@@ -142,7 +102,7 @@ public class ConfigManager
     /// </summary>
     public ApiConfig? GetActiveConfig()
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         if (string.IsNullOrEmpty(settings.ActiveConfigName))
         {
             return null;
@@ -155,13 +115,13 @@ public class ConfigManager
     /// </summary>
     public void SetActiveConfig(string name)
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         if (settings.Configs.All(c => c.Name != name))
         {
             throw new ArgumentException($"配置 '{name}' 不存在。");
         }
         settings.ActiveConfigName = name;
-        SaveSettings(settings);
+        _repository.Save(settings);
     }
 
     /// <summary>
@@ -169,12 +129,12 @@ public class ConfigManager
     /// </summary>
     public void ListConfigs()
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
         var configs = settings.Configs;
 
         if (configs.Count == 0)
         {
-            Console.WriteLine("暂无配置，使用 add 命令添加配置。");
+            _output.WriteLine("暂无配置，使用 add 命令添加配置。");
             return;
         }
 
@@ -184,7 +144,7 @@ public class ConfigManager
         {
             var isActive = config.Name == activeName;
             var prefix = isActive ? "* " : "  ";
-            Console.WriteLine($"{prefix}{config.Name} ({config.Model})");
+            _output.WriteLine($"{prefix}{config.Name} ({config.Model})");
         }
     }
 
@@ -193,38 +153,38 @@ public class ConfigManager
     /// </summary>
     public void ShowCurrentConfig()
     {
-        var settings = LoadSettings();
+        var settings = _repository.Load();
 
         if (settings.Configs.Count == 0)
         {
-            Console.WriteLine("暂无配置。");
+            _output.WriteLine("暂无配置。");
             return;
         }
 
         if (string.IsNullOrEmpty(settings.ActiveConfigName))
         {
-            Console.WriteLine("未设置当前配置，使用 use 命令切换配置。");
+            _output.WriteLine("未设置当前配置，使用 use 命令切换配置。");
             return;
         }
 
         var config = settings.Configs.Find(c => c.Name == settings.ActiveConfigName);
         if (config == null)
         {
-            Console.WriteLine("当前配置不存在，请使用 use 命令设置配置。");
+            _output.WriteLine("当前配置不存在，请使用 use 命令设置配置。");
             return;
         }
 
-        Console.WriteLine($"当前配置:");
-        Console.WriteLine($"  名称: {config.Name}");
-        Console.WriteLine($"  模型: {config.Model}");
-        Console.WriteLine($"  Base URL: {config.BaseUrl}");
+        _output.WriteLine("当前配置:");
+        _output.WriteLine($"  名称: {config.Name}");
+        _output.WriteLine($"  模型: {config.Model}");
+        _output.WriteLine($"  Base URL: {config.BaseUrl}");
 
         if (config.CustomParams.Count > 0)
         {
-            Console.WriteLine($"  自定义参数:");
+            _output.WriteLine("  自定义参数:");
             foreach (var param in config.CustomParams)
             {
-                Console.WriteLine($"    {param.Key}={param.Value}");
+                _output.WriteLine($"    {param.Key}={param.Value}");
             }
         }
     }

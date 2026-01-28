@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.Reflection;
 using ClaudeCodeApiConfigManager.Commands;
-using ClaudeCodeApiConfigManager.Services;
 
 namespace ClaudeCodeApiConfigManager;
 

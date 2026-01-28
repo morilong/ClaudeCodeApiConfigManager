@@ -20,8 +20,8 @@ public static class CommandHelper
         // 自动识别 URL（基于 http:// 或 https:// 前缀）
         foreach (var arg in args)
         {
-            if (arg.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                arg.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            if (arg.StartsWith(Constants.UrlPrefixes.Http, StringComparison.OrdinalIgnoreCase) ||
+                arg.StartsWith(Constants.UrlPrefixes.Https, StringComparison.OrdinalIgnoreCase))
             {
                 baseUrl = arg;
                 break;
@@ -32,8 +32,8 @@ public static class CommandHelper
         var regularArgs = new List<string>();
         foreach (var arg in args)
         {
-            if (arg.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                arg.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            if (arg.StartsWith(Constants.UrlPrefixes.Http, StringComparison.OrdinalIgnoreCase) ||
+                arg.StartsWith(Constants.UrlPrefixes.Https, StringComparison.OrdinalIgnoreCase))
             {
                 continue; // 跳过 URL
             }
@@ -60,8 +60,8 @@ public static class CommandHelper
             var arg0 = regularArgs[0];
             var arg1 = regularArgs[1];
 
-            bool arg0IsToken = arg0.StartsWith("sk-") || arg0.Length > arg1.Length;
-            bool arg1IsToken = arg1.StartsWith("sk-") || arg1.Length > arg0.Length;
+            bool arg0IsToken = arg0.StartsWith(Constants.ApiTokenPrefix) || arg0.Length > arg1.Length;
+            bool arg1IsToken = arg1.StartsWith(Constants.ApiTokenPrefix) || arg1.Length > arg0.Length;
 
             if (arg0IsToken && !arg1IsToken)
             {
@@ -84,7 +84,7 @@ public static class CommandHelper
         {
             // 只有一个参数，可能是 token 或 model
             // 如果它看起来像 token，就是 token，否则是 model
-            if (regularArgs[0].StartsWith("sk-"))
+            if (regularArgs[0].StartsWith(Constants.ApiTokenPrefix))
             {
                 token = regularArgs[0];
             }
@@ -127,9 +127,9 @@ public static class CommandHelper
     {
         var variables = new Dictionary<string, string>
         {
-            ["ANTHROPIC_AUTH_TOKEN"] = config.AuthToken,
-            ["ANTHROPIC_BASE_URL"] = config.BaseUrl,
-            ["ANTHROPIC_MODEL"] = config.Model
+            [Constants.EnvVars.AuthToken] = config.AuthToken,
+            [Constants.EnvVars.BaseUrl] = config.BaseUrl,
+            [Constants.EnvVars.Model] = config.Model
         };
 
         // 添加自定义参数

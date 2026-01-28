@@ -8,7 +8,9 @@ namespace ClaudeCodeApiConfigManager.Commands;
 /// </summary>
 public static class CommandBuilder
 {
-    private static readonly ConfigManager ConfigManager = new();
+    private static readonly ConfigRepository ConfigRepository = new(Platform.GetSettingsFilePath());
+    private static readonly IConsoleOutput ConsoleOutput = new ConsoleOutput();
+    private static readonly ConfigService ConfigService = new(ConfigRepository, ConsoleOutput);
 
     /// <summary>
     /// 创建 add 命令
@@ -40,24 +42,24 @@ public static class CommandBuilder
             // 验证必填字段
             if (string.IsNullOrEmpty(config.AuthToken))
             {
-                Console.Error.WriteLine("错误: 未找到 API Token。");
-                Console.Error.WriteLine("用法: ccm add <name> <TOKEN> <BASE_URL> <MODEL> [自定义参数...]");
+                ConsoleOutput.WriteError("错误: 未找到 API Token。");
+                ConsoleOutput.WriteError("用法: ccm add <name> <TOKEN> <BASE_URL> <MODEL> [自定义参数...]");
                 return;
             }
 
             if (string.IsNullOrEmpty(config.BaseUrl))
             {
-                Console.Error.WriteLine("错误: 未找到 Base URL（必须以 http:// 或 https:// 开头）。");
+                ConsoleOutput.WriteError("错误: 未找到 Base URL（必须以 http:// 或 https:// 开头）。");
                 return;
             }
 
             if (string.IsNullOrEmpty(config.Model))
             {
-                Console.Error.WriteLine("错误: 未指定模型名称。");
+                ConsoleOutput.WriteError("错误: 未指定模型名称。");
                 return;
             }
 
-            ConfigManager.AddOrUpdateConfig(config);
+            ConfigService.AddOrUpdateConfig(config);
         });
 
         return command;
@@ -73,7 +75,7 @@ public static class CommandBuilder
 
         command.SetAction(_ =>
         {
-            ConfigManager.ListConfigs();
+            ConfigService.ListConfigs();
         });
 
         return command;
@@ -97,21 +99,21 @@ public static class CommandBuilder
         command.SetAction(parseResult =>
         {
             var name = parseResult.GetValue(nameArgument)!;
-            var config = ConfigManager.GetConfig(name);
+            var config = ConfigService.GetConfig(name);
             if (config == null)
             {
-                Console.Error.WriteLine($"错误: 配置 '{name}' 不存在。");
+                ConsoleOutput.WriteError($"错误: 配置 '{name}' 不存在。");
                 return;
             }
 
             try
             {
                 CommandHelper.SetEnvironmentVariables(config);
-                ConfigManager.SetActiveConfig(name);
+                ConfigService.SetActiveConfig(name);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"错误: {ex.Message}");
+                ConsoleOutput.WriteError($"错误: {ex.Message}");
             }
         });
 
@@ -128,7 +130,7 @@ public static class CommandBuilder
 
         command.SetAction(_ =>
         {
-            ConfigManager.ShowCurrentConfig();
+            ConfigService.ShowCurrentConfig();
         });
 
         return command;
@@ -153,7 +155,7 @@ public static class CommandBuilder
         command.SetAction(parseResult =>
         {
             var name = parseResult.GetValue(nameArgument)!;
-            ConfigManager.RemoveConfig(name);
+            ConfigService.RemoveConfig(name);
         });
 
         return command;

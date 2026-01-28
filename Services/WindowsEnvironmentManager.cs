@@ -14,8 +14,8 @@ public static class WindowsEnvironmentManager
             Environment.SetEnvironmentVariable(variable.Key, variable.Value, EnvironmentVariableTarget.User);
         }
 
-        Console.WriteLine("环境变量已更新。");
-        Console.WriteLine("打开新终端窗口 或 重启ClaudeCode程序 使更改生效。");
+        Console.WriteLine(Constants.Messages.WindowsEnvUpdate);
+        Console.WriteLine(Constants.Messages.WindowsRestartHint);
     }
 }
 

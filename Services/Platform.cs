@@ -9,18 +9,15 @@ public static class Platform
     public static bool IsLinux => OperatingSystem.IsLinux();
     public static bool IsMacOS => OperatingSystem.IsMacOS();
     public static bool IsUnix => IsLinux || IsMacOS;
-}
 
-/// <summary>
-/// 配置目录路径获取
-/// </summary>
-public static class ConfigDirectory
-{
+    /// <summary>
+    /// 获取配置目录路径
+    /// </summary>
     public static string GetConfigDirectory()
     {
         string baseDir;
 
-        if (Platform.IsWindows)
+        if (IsWindows)
         {
             // Windows: 使用可执行文件所在目录
             baseDir = AppContext.BaseDirectory;
@@ -31,7 +28,7 @@ public static class ConfigDirectory
             baseDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".config",
-                "ClaudeCodeApiConfigManager"
+                Constants.Dirs.ConfigDir
             );
         }
 
@@ -44,8 +41,11 @@ public static class ConfigDirectory
         return baseDir;
     }
 
+    /// <summary>
+    /// 获取配置文件路径
+    /// </summary>
     public static string GetSettingsFilePath()
     {
-        return Path.Combine(GetConfigDirectory(), "settings.json");
+        return Path.Combine(GetConfigDirectory(), Constants.Files.Settings);
     }
 }
