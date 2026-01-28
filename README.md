@@ -45,12 +45,24 @@ dotnet publish -c Release
 # 智谱AI
 ccm add zhipu xxx.xxx https://open.bigmodel.cn/api/anthropic glm-4.7
 
-#DeepSeek
+# DeepSeek
 ccm add ds sk-xxx https://api.deepseek.com/anthropic deepseek-chat
+
+# MiniMax
+ccm add mm xxx.xxx-xxx https://api.minimaxi.com/anthropic MiniMax-M2
+
+# Kimi
+ccm add kimi sk-xxx https://api.moonshot.cn/anthropic kimi-k2.5
 ```
 
+配置自定义参数：
+```
+ccm add ds sk-xxx https://api.deepseek.com/anthropic deepseek-chat API_TIMEOUT_MS=600000
+```
+- 格式：KEY=VALUE（如：API_TIMEOUT_MS=600000）
+
 工具会智能识别参数：
-- 以 `sk-` 开头的识别为 API Token
+- 以 `sk-` 开头或较长的识别为 API Token
 - 以 `http://` 或 `https://` 开头的识别为 Base URL
 - `KEY=VALUE` 格式的识别为自定义参数
 - 剩余参数作为模型名称
@@ -163,7 +175,9 @@ ccm v
       "authToken": "sk-xxx",
       "baseUrl": "https://api.deepseek.com/anthropic",
       "model": "deepseek-chat",
-      "customParams": {}
+      "customParams": {
+        "API_TIMEOUT_MS": 600000
+      }
     }
   ],
   "activeConfigName": "zhipu"
@@ -244,7 +258,3 @@ A: 需要重新加载 Shell 配置文件，例如：`source ~/.zshrc` 或 `sourc
 ### Q: 如何备份我的配置？
 
 A: 直接复制配置文件即可。Windows 上在可执行文件目录，Unix 上在 `~/.config/ClaudeCodeApiConfigManager/`。
-
-## License
-
-MIT License
