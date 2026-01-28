@@ -177,7 +177,7 @@ public class ConfigService
         _output.WriteLine("当前配置:");
         _output.WriteLine($"  名称: {config.Name}");
         _output.WriteLine($"  模型: {config.Model}");
-        _output.WriteLine($"  Base URL: {config.BaseUrl}");
+        _output.WriteLine($"  BaseURL: {config.BaseUrl}");
 
         if (config.CustomParams.Count > 0)
         {

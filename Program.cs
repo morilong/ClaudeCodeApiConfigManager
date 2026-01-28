@@ -19,7 +19,7 @@ class Program
 
             var rootCommand = new RootCommand
             {
-                Description = "跨平台 CLI 工具，用于管理 Claude Code API 配置。"
+                Description = "一个跨平台的 Claude Code API 配置管理工具。"
             };
 
             // 添加版本选项
