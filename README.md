@@ -6,7 +6,7 @@
 
 ## 简介
 
-**ccm** (Claude Code API Config Manager) 是一个命令行工具，帮助开发者快速管理和切换多个 Claude Code API 配置。如果你经常在不同的 API 提供商（如 Anthropic、DeepSeek、智谱AI 等）之间切换，或者需要为不同项目使用不同的 API 配置，这个工具将大大提高你的效率。
+**ccm** (Claude Code API Config Manager) 是一个命令行工具，帮助开发者快速管理和切换多个 Claude Code API 配置。如果你经常在不同的 API 提供商（如 DeepSeek、智谱AI、MiniMax、Kimi、通义千问 等）之间切换，或者需要为不同项目使用不同的 API 配置，这个工具将大大提高你的效率。
 
 ## 功能特性
 
@@ -49,10 +49,16 @@ ccm add zhipu xxx.xxx https://open.bigmodel.cn/api/anthropic glm-4.7
 ccm add ds sk-xxx https://api.deepseek.com/anthropic deepseek-chat
 
 # MiniMax
-ccm add mm xxx.xxx-xxx https://api.minimaxi.com/anthropic MiniMax-M2
+ccm add mm xxx.xxx-xxx https://api.minimaxi.com/anthropic MiniMax-M2.1
 
 # Kimi
 ccm add kimi sk-xxx https://api.moonshot.cn/anthropic kimi-k2.5
+
+# 通义千问Coder
+ccm add qwen3 sk-xxx https://dashscope.aliyuncs.com/apps/anthropic qwen3-coder-plus
+
+# 通义千问Coder Coding Plan
+ccm add qwen3-coding sk-xxx https://coding.dashscope.aliyuncs.com/apps/anthropic qwen3-coder-plus
 ```
 
 配置自定义参数：
@@ -155,7 +161,7 @@ ccm v
 
 | 平台 | 位置 |
 |-----|------|
-| Windows | 可执行文件目录/`settings.json` |
+| Windows | `可执行文件目录/settings.json` |
 | Linux/macOS | `~/.config/ClaudeCodeApiConfigManager/settings.json` |
 
 配置文件格式：
@@ -248,13 +254,13 @@ ClaudeCodeApiConfigManager/
 ## 常见问题
 
 ### Q: Windows 上切换配置后环境变量没有生效？
-
 A: Windows 使用用户级环境变量，设置后需要重启程序或打开新的终端窗口。
 
 ### Q: Linux/macOS 上切换配置后环境变量没有生效？
-
 A: 需要重新加载 Shell 配置文件，例如：`source ~/.zshrc` 或 `source ~/.bashrc`。
 
 ### Q: 如何备份我的配置？
-
 A: 直接复制配置文件即可。Windows 上在可执行文件目录，Unix 上在 `~/.config/ClaudeCodeApiConfigManager/`。
+
+### Q: win7/win8报错：`无法启动此程序，因为计算机中丢失 api-ms-win-crt-*.dll。`
+A: https://gitee.com/morilong/windows-sdk-ucrt-redistributable-dlls
