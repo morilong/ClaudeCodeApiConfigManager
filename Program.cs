@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Text;
 using ClaudeCodeApiConfigManager.Commands;
 using ClaudeCodeApiConfigManager.Services;
 
@@ -10,11 +11,24 @@ class Program
     {
         try
         {
+            Console.OutputEncoding = Encoding.UTF8;
+
             // 检查是否请求显示版本
             if (VersionHelper.IsVersionRequest(args))
             {
                 VersionHelper.PrintVersion();
                 return 0;
+            }
+
+            // 无参数时运行初始化向导
+            if (args.Length == 0)
+            {
+                var result = InitService.RunInitializeWizard();
+                if (result != -1)
+                {
+                    return result;
+                }
+                // 已安装，正常使用
             }
 
             var rootCommand = new RootCommand
@@ -31,6 +45,7 @@ class Program
             rootCommand.Subcommands.Add(CommandBuilder.CreateUseCommand());
             rootCommand.Subcommands.Add(CommandBuilder.CreateCurrentCommand());
             rootCommand.Subcommands.Add(CommandBuilder.CreateRemoveCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateUninstallCommand());
 
             return rootCommand.Parse(args).Invoke();
         }

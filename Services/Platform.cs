@@ -48,4 +48,17 @@ public static class Platform
     {
         return Path.Combine(GetConfigDirectory(), Constants.Files.Settings);
     }
+
+    /// <summary>
+    /// 检查目录是否在 PATH 中
+    /// </summary>
+    public static bool IsDirectoryInPath(string dir)
+    {
+        var pathEnv = IsWindows ?
+            Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) :
+            Environment.GetEnvironmentVariable("PATH");
+        var pathEntries = (pathEnv ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+        return pathEntries.Any(p => p.TrimEnd('\\', '/').Equals(dir.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
+    }
+
 }

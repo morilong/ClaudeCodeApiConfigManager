@@ -160,4 +160,28 @@ public static class CommandBuilder
 
         return command;
     }
+
+    /// <summary>
+    /// 创建 uninstall 命令
+    /// </summary>
+    public static Command CreateUninstallCommand()
+    {
+        var removeConfigOption = new Option<bool>(
+            "--remove-config",
+            "同时删除配置文件和配置目录"
+        );
+
+        var command = new Command("uninstall", "卸载全局命令")
+        {
+            removeConfigOption
+        };
+
+        command.SetAction(parseResult =>
+        {
+            var removeConfig = parseResult.GetValue(removeConfigOption);
+            InstallService.Uninstall(removeConfig);
+        });
+
+        return command;
+    }
 }
