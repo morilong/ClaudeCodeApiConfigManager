@@ -188,4 +188,24 @@ public class ConfigService
             }
         }
     }
+
+    /// <summary>
+    /// 修改指定配置的 Token
+    /// </summary>
+    public bool SetToken(string name, string token)
+    {
+        var settings = _repository.Load();
+        var config = settings.Configs.Find(c => c.Name == name);
+
+        if (config == null)
+        {
+            _output.WriteError($"错误: 配置 '{name}' 不存在。");
+            return false;
+        }
+
+        config.AuthToken = token;
+        _repository.Save(settings);
+        _output.WriteLine($"配置 '{name}' 的 Token 已更新。");
+        return true;
+    }
 }

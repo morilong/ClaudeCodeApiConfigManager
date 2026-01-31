@@ -45,6 +45,7 @@ class Program
             rootCommand.Subcommands.Add(CommandBuilder.CreateUseCommand());
             rootCommand.Subcommands.Add(CommandBuilder.CreateCurrentCommand());
             rootCommand.Subcommands.Add(CommandBuilder.CreateRemoveCommand());
+            rootCommand.Subcommands.Add(CommandBuilder.CreateSetTokenCommand());
             rootCommand.Subcommands.Add(CommandBuilder.CreateUninstallCommand());
 
             return rootCommand.Parse(args).Invoke();

@@ -185,4 +185,35 @@ public static class CommandBuilder
 
         return command;
     }
+
+    /// <summary>
+    /// 创建 setToken 命令
+    /// </summary>
+    public static Command CreateSetTokenCommand()
+    {
+        var nameArgument = new Argument<string>("name")
+        {
+            Description = "配置名称"
+        };
+        var tokenArgument = new Argument<string>("token")
+        {
+            Description = "新的 API Token"
+        };
+
+        var command = new Command("setToken", "修改指定配置的 API Token")
+        {
+            nameArgument,
+            tokenArgument
+        };
+        command.Aliases.Add("st");
+
+        command.SetAction(parseResult =>
+        {
+            var name = parseResult.GetValue(nameArgument)!;
+            var token = parseResult.GetValue(tokenArgument)!;
+            ConfigService.SetToken(name, token);
+        });
+
+        return command;
+    }
 }
