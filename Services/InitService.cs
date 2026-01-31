@@ -109,7 +109,8 @@ public static class InitService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"初始化失败: {ex.Message}");
+            Console.Error.WriteLine("初始化失败：");
+            Console.Error.WriteLine(ex.ToString());
             return 1;
         }
     }
@@ -178,7 +179,8 @@ public static class InitService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"创建配置文件失败: {ex.Message}");
+            Console.Error.WriteLine("创建配置文件失败：");
+            Console.Error.WriteLine(ex.ToString());
             return false;
         }
     }

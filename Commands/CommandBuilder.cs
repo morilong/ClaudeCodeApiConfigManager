@@ -113,7 +113,8 @@ public static class CommandBuilder
             }
             catch (Exception ex)
             {
-                ConsoleOutput.WriteError($"错误: {ex.Message}");
+                ConsoleOutput.WriteError("错误：");
+                ConsoleOutput.WriteError(ex.ToString());
             }
         });
 

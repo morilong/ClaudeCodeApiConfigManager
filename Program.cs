@@ -51,7 +51,8 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"发生错误: {ex.Message}");
+            Console.Error.WriteLine("发生错误：");
+            Console.Error.WriteLine(ex.ToString());
             return 1;
         }
     }
