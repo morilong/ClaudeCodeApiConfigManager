@@ -66,7 +66,24 @@ public static class InstallService
     public static bool IsInstallPathInPath()
     {
         var plan = DetectInstallPlan();
+
+        if (Platform.IsUnix)
+        {
+            return IsUnixCcmInstalled();
+        }
+
         return Platform.IsDirectoryInPath(plan.InstallDirectory);
+    }
+
+    /// <summary>
+    /// 检查 Unix 下 ccm 是否已安装（在 ~/.local/bin 或 /usr/local/bin 中）
+    /// </summary>
+    private static bool IsUnixCcmInstalled()
+    {
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var localBinLink = Path.Combine(homeDir, Constants.Install.LocalBinDir, Constants.Install.UnixExeName);
+        var usrLocalBinLink = Path.Combine(Constants.Install.UsrLocalBinDir, Constants.Install.UnixExeName);
+        return File.Exists(localBinLink) || File.Exists(usrLocalBinLink);
     }
 
     /// <summary>
@@ -80,7 +97,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"安装失败: {ex.Message}");
+            Console.Error.WriteLine("安装失败：");
+            Console.Error.WriteLine(ex.ToString());
             return false;
         }
     }
@@ -103,7 +121,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"卸载失败: {ex.Message}");
+            Console.Error.WriteLine("卸载失败：");
+            Console.Error.WriteLine(ex.ToString());
         }
     }
 
@@ -298,7 +317,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"无法修改 PATH 环境变量: {ex.Message}");
+            Console.Error.WriteLine("无法修改 PATH 环境变量：");
+            Console.Error.WriteLine(ex.ToString());
             throw;
         }
     }
@@ -389,7 +409,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"无法从 PATH 移除目录: {ex.Message}");
+            Console.Error.WriteLine("无法从 PATH 移除目录：");
+            Console.Error.WriteLine(ex.ToString());
         }
 
         // 如果是 C 盘默认安装，删除复制的.exe和配置文件
@@ -408,7 +429,8 @@ public static class InstallService
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"删除配置文件失败：{ex.Message}");
+                    Console.Error.WriteLine("删除配置文件失败：");
+                    Console.Error.WriteLine(ex.ToString());
                 }
             }
 
@@ -426,7 +448,8 @@ public static class InstallService
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"删除 {Constants.Install.WinExeName} 失败：{ex.Message}");
+                Console.Error.WriteLine($"删除 {Constants.Install.WinExeName} 失败：");
+                Console.Error.WriteLine(ex.ToString());
             }
         }
 
@@ -509,7 +532,6 @@ public static class InstallService
     /// </summary>
     private static bool UnixInstall()
     {
-        var plan = DetectInstallPlan();
         var currentExe = Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0];
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var localBinPath = Path.Combine(homeDir, Constants.Install.LocalBinDir);
@@ -595,7 +617,7 @@ public static class InstallService
         }
         else
         {
-            File.CreateSymbolicLink(currentExe, linkPath);
+            File.CreateSymbolicLink(linkPath, currentExe);
         }
 
         // 如果 ~/.local/bin 不在 PATH 中，显示警告
@@ -655,6 +677,7 @@ public static class InstallService
         }
         else
         {
+            Console.WriteLine();
             Console.Write($"{Constants.Messages.AskRemoveConfig} ");
             var response = Console.ReadLine()?.Trim().ToLower();
             removeConfig = response == "y" || response == "yes";
@@ -679,7 +702,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"删除符号链接失败: {ex.Message}");
+            Console.Error.WriteLine("删除符号链接失败：");
+            Console.Error.WriteLine(ex.ToString());
         }
 
         // 删除配置文件
