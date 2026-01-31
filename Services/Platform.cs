@@ -11,34 +11,24 @@ public static class Platform
     public static bool IsUnix => IsLinux || IsMacOS;
 
     /// <summary>
-    /// 获取配置目录路径
+    /// 获取配置目录路径（不自动创建目录）
     /// </summary>
     public static string GetConfigDirectory()
     {
-        string baseDir;
-
         if (IsWindows)
         {
             // Windows: 使用可执行文件所在目录
-            baseDir = AppContext.BaseDirectory;
+            return AppContext.BaseDirectory;
         }
         else
         {
             // Linux/macOS: ~/.config/ClaudeCodeApiConfigManager
-            baseDir = Path.Combine(
+            return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".config",
                 Constants.Dirs.ConfigDir
             );
         }
-
-        // 确保目录存在
-        if (!Directory.Exists(baseDir))
-        {
-            Directory.CreateDirectory(baseDir);
-        }
-
-        return baseDir;
     }
 
     /// <summary>
