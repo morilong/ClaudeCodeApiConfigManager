@@ -152,21 +152,31 @@ public static class InstallService
     }
 
     /// <summary>
-    /// 检查目录是否只包含 ccm.exe 和可选的 settings.json
+    /// 检查目录是否只包含 ccm.exe 和其他少量非 .exe 文件
     /// </summary>
     private static bool IsDirectoryClean(string directory)
     {
         try
         {
-            var files = Directory.EnumerateFileSystemEntries(directory);
-            foreach (var file in files)
-            {
-                var fileName = Path.GetFileName(file);
-                if (!fileName.Equals(Constants.Install.WinExeName, StringComparison.OrdinalIgnoreCase) &&
-                    !fileName.Equals(Constants.Install.PdbFileName, StringComparison.OrdinalIgnoreCase) &&
-                    !fileName.Equals(Constants.Files.Settings, StringComparison.OrdinalIgnoreCase))
+            var fileOrDirNames = Directory.EnumerateFileSystemEntries(directory)
+                .Select(path => Path.GetFileName(path))
+                .Where(fileName =>
                 {
-                    return false;
+                    // 排除 api-ms-win-*.dll
+                    var isMsApiDll = fileName.StartsWith("api-ms-win-", StringComparison.OrdinalIgnoreCase) &&
+                        fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase);
+                    return !isMsApiDll;
+                }).ToArray();
+            if (fileOrDirNames.Length > 10)
+            {
+                return false; // 文件过多
+            }
+            foreach (var fileName in fileOrDirNames)
+            {
+                if (fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
+                    !fileName.Equals(Constants.Install.WinExeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false; // 发现其他.exe
                 }
             }
             return true;
