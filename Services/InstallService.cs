@@ -61,29 +61,28 @@ public static class InstallService
     }
 
     /// <summary>
-    /// 检查安装路径是否已在 PATH 环境变量中
+    /// 检查是否已安装
     /// </summary>
-    public static bool IsInstallPathInPath()
+    public static bool IsInstalled()
     {
-        var plan = DetectInstallPlan();
-
-        if (Platform.IsUnix)
+        if (Platform.IsWindows)
         {
-            return IsUnixCcmInstalled();
+            var pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User);
+            var pathEntries = (pathEnv ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var path in pathEntries)
+            {
+                var exePath = Path.Combine(path, Constants.Install.WinExeName);
+                if (File.Exists(exePath))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
-
-        return Platform.IsDirectoryInPath(plan.InstallDirectory);
-    }
-
-    /// <summary>
-    /// 检查 Unix 下 ccm 是否已安装（在 ~/.local/bin 或 /usr/local/bin 中）
-    /// </summary>
-    private static bool IsUnixCcmInstalled()
-    {
-        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var localBinLink = Path.Combine(homeDir, Constants.Install.LocalBinDir, Constants.Install.UnixExeName);
-        var usrLocalBinLink = Path.Combine(Constants.Install.UsrLocalBinDir, Constants.Install.UnixExeName);
-        return File.Exists(localBinLink) || File.Exists(usrLocalBinLink);
+        else
+        {
+            return ExecuteOnUnix("ccm", "-v").Code == 0;
+        }
     }
 
     /// <summary>
@@ -173,7 +172,7 @@ public static class InstallService
     /// <summary>
     /// 检查目录是否只包含 ccm.exe 和其他少量非 .exe 文件
     /// </summary>
-    private static bool IsDirectoryClean(string directory)
+    public static bool IsDirectoryClean(string directory)
     {
         try
         {
@@ -328,50 +327,29 @@ public static class InstallService
     /// </summary>
     private static void WindowsUninstall(bool removeConfig)
     {
-        var installDirectory = GetWinUserProfileCcmDir();
-        var installExePath = Path.Combine(installDirectory, Constants.Install.WinExeName);
-        var existInstallExePath = File.Exists(installExePath);
+        var installDir = AppContext.BaseDirectory.TrimEnd('\\', '/');
+        var exeFilePath = Path.Combine(installDir, Constants.Install.WinExeName);
+        var existExeFile = File.Exists(exeFilePath);
 
-        var currentExeDir = AppContext.BaseDirectory.TrimEnd('\\', '/');
-        var currentDirInstallExePath = Path.Combine(currentExeDir, Constants.Install.WinExeName);
-        var isCurrentDirInstall = File.Exists(currentDirInstallExePath) &&
-            !currentDirInstallExePath.Contains(installExePath, StringComparison.OrdinalIgnoreCase);
-
-        if (existInstallExePath)
+        if (existExeFile)
         {
-            Console.WriteLine($"检测到 ccm 安装目录: {installDirectory}");
-        }
-        if (isCurrentDirInstall)
-        {
-            Console.WriteLine($"检测到 ccm 安装目录: {currentExeDir}");
+            Console.WriteLine($"检测到 ccm 安装目录: {installDir}");
         }
         Console.WriteLine();
         Console.WriteLine("这将卸载 ccm 全局命令：");
 
-        // 如果是 C 盘默认安装：删除.exe
-        if (existInstallExePath)
+        if (existExeFile)
         {
-            Console.WriteLine($"- 删除: {installExePath}");
+            Console.WriteLine($"- 从 PATH 环境变量中移除: {installDir}");
+            Console.WriteLine($"- 删除: {exeFilePath}");
         }
-
-        if (existInstallExePath)
-        {
-            Console.WriteLine($"- 从 PATH 环境变量中移除: {installDirectory}");
-        }
-        if (isCurrentDirInstall)
-        {
-            Console.WriteLine($"- 从 PATH 环境变量中移除: {currentExeDir}");
-        }
-
-        // 只有默认 C 盘安装的才删除配置文件
-        removeConfig = removeConfig && existInstallExePath;
 
         // 询问是否删除配置文件
         if (removeConfig)
         {
             Console.WriteLine($"- 删除配置文件: {Platform.GetSettingsFilePath()}");
         }
-        else if (existInstallExePath)
+        else
         {
             Console.WriteLine();
             Console.Write($"{Constants.Messages.AskRemoveConfig} ");
@@ -387,24 +365,11 @@ public static class InstallService
         {
             var pathEnv = Environment.GetEnvironmentVariable("PATH", EnvironmentVariableTarget.User) ?? "";
             var pathEntries = pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries).ToList();
-            var successList = new List<string>();
-            if (pathEntries.RemoveAll(p => p.Equals(installDirectory, StringComparison.OrdinalIgnoreCase)) > 0)
-            {
-                successList.Add($"✓ {Constants.Messages.RemovedFromPath}: {installDirectory}");
-            }
-            if (pathEntries.RemoveAll(p => p.Equals(currentExeDir, StringComparison.OrdinalIgnoreCase)) > 0)
-            {
-                successList.Add($"✓ {Constants.Messages.RemovedFromPath}: {currentExeDir}");
-            }
-            if (successList.Count > 0)
+            if (pathEntries.RemoveAll(p => p.Equals(installDir, StringComparison.OrdinalIgnoreCase)) > 0)
             {
                 var newPath = string.Join(Path.PathSeparator, pathEntries);
                 Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.User);
-
-                foreach (var item in successList)
-                {
-                    Console.WriteLine(item);
-                }
+                Console.WriteLine($"✓ {Constants.Messages.RemovedFromPath}: {installDir}");
             }
         }
         catch (Exception ex)
@@ -413,44 +378,43 @@ public static class InstallService
             Console.Error.WriteLine(ex.ToString());
         }
 
-        // 如果是 C 盘默认安装，删除复制的.exe和配置文件
-        if (existInstallExePath)
+        // 删除配置文件
+        if (removeConfig)
         {
-            // 删除配置文件
-            if (removeConfig)
+            try
             {
-                try
+                var settingsPath = Path.Combine(installDir, Constants.Files.Settings);
+                if (File.Exists(settingsPath))
                 {
-                    var settingsPath = Path.Combine(installDirectory, Constants.Files.Settings);
-                    if (File.Exists(settingsPath))
-                    {
-                        File.Delete(settingsPath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine("删除配置文件失败：");
-                    Console.Error.WriteLine(ex.ToString());
+                    File.Delete(settingsPath);
                 }
             }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("删除配置文件失败：");
+                Console.Error.WriteLine(ex.ToString());
+            }
+        }
 
-            // 启动独立 cmd 进程执行删除复制的.exe文件 + 删除空的安装目录
-            try
+        // 启动独立 cmd 进程执行删除复制的.exe文件 + 删除空的安装目录
+        try
+        {
+            if (existExeFile)
             {
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = $"/C ping 127.0.0.1 -n 2 >nul & del \"{installExePath}\" & rd \"{installDirectory}\" 2>nul",
+                    Arguments = $"/C ping 127.0.0.1 -n 2 >nul & del \"{exeFilePath}\" & rd \"{installDir}\" 2>nul",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
                 });
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"删除 {Constants.Install.WinExeName} 失败：");
-                Console.Error.WriteLine(ex.ToString());
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"删除 {Constants.Install.WinExeName} 失败：");
+            Console.Error.WriteLine(ex.ToString());
         }
 
         Console.WriteLine();
@@ -506,25 +470,13 @@ public static class InstallService
     }
 
     /// <summary>
-    /// 检查 ~/.local/bin 是否在 PATH
+    /// 检查指定目录是否在 PATH
     /// </summary>
-    private static bool IsLocalBinInPath()
-    {
-        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var localBinPath = Path.Combine(homeDir, Constants.Install.LocalBinDir);
-        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
-        var pathEntries = pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
-        return pathEntries.Any(p => p.Equals(localBinPath, StringComparison.OrdinalIgnoreCase));
-    }
-
-    /// <summary>
-    /// 检查 /usr/local/bin 是否在 PATH
-    /// </summary>
-    private static bool IsUsrLocalBinInPath()
+    private static bool IsInPath(string dir)
     {
         var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
         var pathEntries = pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
-        return pathEntries.Any(p => p.Equals(Constants.Install.UsrLocalBinDir, StringComparison.OrdinalIgnoreCase));
+        return pathEntries.Any(p => p.Equals(dir, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -532,26 +484,10 @@ public static class InstallService
     /// </summary>
     private static bool UnixInstall()
     {
+        var plan = DetectInstallPlan();
+        var targetDir = plan.InstallDirectory;
+        var needSudo = targetDir.Equals(Constants.Install.UsrLocalBinDir, StringComparison.OrdinalIgnoreCase);
         var currentExe = Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0];
-        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var localBinPath = Path.Combine(homeDir, Constants.Install.LocalBinDir);
-
-        string targetDir;
-        bool needSudo = false;
-
-        if (IsLocalBinInPath())
-        {
-            targetDir = localBinPath;
-        }
-        else if (IsUsrLocalBinInPath())
-        {
-            targetDir = Constants.Install.UsrLocalBinDir;
-            needSudo = true;
-        }
-        else
-        {
-            targetDir = localBinPath;
-        }
 
         // 确保目标目录存在
         if (!Directory.Exists(targetDir))
@@ -620,13 +556,13 @@ public static class InstallService
             File.CreateSymbolicLink(linkPath, currentExe);
         }
 
-        // 如果 ~/.local/bin 不在 PATH 中，显示警告
-        if (!IsLocalBinInPath() && !IsUsrLocalBinInPath())
+        // 如果目录不在 PATH 中，显示警告
+        if (!IsInPath(targetDir))
         {
             Console.WriteLine();
-            Console.WriteLine($"警告: {localBinPath} 不在 PATH 中。");
+            Console.WriteLine($"注意: {targetDir} 不在 PATH 中。");
             Console.WriteLine("请添加以下内容到 ~/.bashrc 或 ~/.zshrc:");
-            Console.WriteLine($"  export PATH=\"$HOME/{Constants.Install.LocalBinDir}:$PATH\"");
+            Console.WriteLine($"  export PATH=\"{targetDir}:$PATH\"");
         }
 
         return true;
@@ -761,6 +697,32 @@ public static class InstallService
         {
             return -1;
         }
+    }
+
+    private static (int Code, string Output, string Error) ExecuteOnUnix(string command, string arguments)
+    {
+        string fullCommand = $"{command} {arguments} 2>&1";
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "/bin/sh",
+            Arguments = $"-c \"{fullCommand}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = Process.Start(startInfo);
+        if (process == null)
+        {
+            return (-1, "", "启动进程失败。");
+        }
+
+        string output = process.StandardOutput.ReadToEnd();
+        string error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        return (process.ExitCode, output, error);
     }
 
     #endregion

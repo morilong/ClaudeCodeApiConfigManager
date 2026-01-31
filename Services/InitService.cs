@@ -40,11 +40,10 @@ public static class InitService
             var settingsPath = Path.Combine(installPlan.ConfigDirectory, Constants.Files.Settings);
 
             // 检测状态
-            var configExists = File.Exists(settingsPath);
-            var pathExists = InstallService.IsInstallPathInPath();
+            var isInstalled = InstallService.IsInstalled();
 
-            // 如果配置文件已存在且 PATH 已设置，不需要初始化
-            if (configExists && pathExists)
+            // 如果已安装，不需要初始化
+            if (isInstalled)
             {
                 return ShowInstalled();
             }
@@ -54,28 +53,34 @@ public static class InitService
                 // 显示欢迎信息
                 ShowWelcomeMessage();
 
-                // 根据状态显示需要执行的操作
-                int stepNumber = 1;
-                if (!configExists)
+                // 让用户选择安装目录
+                var selectedOption = InstallPromptService.PromptInstallDirectory(installPlan);
+                if (selectedOption == null)
                 {
-                    Console.WriteLine($"\n{stepNumber}. 创建配置文件到: {settingsPath}");
-                    Console.WriteLine("   包含预设配置: zhipu, ds, mm, kimi, qwen3, qwen3-coding");
-                    stepNumber++;
-                }
-                if (!pathExists)
-                {
-                    Console.WriteLine($"\n{stepNumber}. {installPlan.Description}");
+                    Console.WriteLine("安装已取消。");
+                    return 0;
                 }
 
-                // 询问用户是否继续
-                if (!ConfirmAction())
+                // 更新安装计划
+                installPlan.InstallDirectory = selectedOption.Directory;
+                installPlan.Description = selectedOption.Description;
+                if (Platform.IsWindows)
+                {
+                    // 配置目录始终跟随安装目录
+                    installPlan.ConfigDirectory = selectedOption.Directory;
+                    // 重新计算配置文件路径
+                    settingsPath = Path.Combine(installPlan.ConfigDirectory, Constants.Files.Settings);
+                }
+
+                // 确认安装计划
+                if (!InstallPromptService.ConfirmInstallPlan(selectedOption, installPlan))
                 {
                     Console.WriteLine("安装已取消。");
                     return 0;
                 }
 
                 // 执行全局安装（如果 PATH 不存在）
-                if (!pathExists)
+                if (!isInstalled)
                 {
                     var installSuccess = InstallService.Install();
                     if (!installSuccess)
@@ -86,6 +91,7 @@ public static class InitService
                 }
 
                 // 创建配置文件（如果不存在）
+                var configExists = File.Exists(settingsPath);
                 if (!configExists)
                 {
                     if (!CreateDefaultConfigFile(settingsPath))
@@ -95,7 +101,7 @@ public static class InitService
                 }
 
                 // 显示成功信息
-                ShowSuccessMessage(configExists, pathExists);
+                ShowSuccessMessage(configExists, isInstalled);
             }
             finally
             {
@@ -138,16 +144,6 @@ public static class InitService
         Console.WriteLine(Constants.Messages.WelcomeMessage);
         Console.WriteLine();
         Console.WriteLine(Constants.Messages.FirstRunDetected);
-    }
-
-    /// <summary>
-    /// 获取用户确认
-    /// </summary>
-    private static bool ConfirmAction()
-    {
-        Console.Write($"\n{Constants.Messages.AskContinue} ");
-        var response = Console.ReadLine()?.Trim().ToLower();
-        return string.IsNullOrEmpty(response) || response == "y" || response == "yes";
     }
 
     /// <summary>
