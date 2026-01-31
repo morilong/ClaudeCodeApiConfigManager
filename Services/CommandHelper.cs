@@ -111,13 +111,18 @@ public static class CommandHelper
     {
         var variables = BuildEnvironmentVariables(config);
 
-#if WINDOWS
-        WindowsEnvironmentManager.SetEnvironmentVariables(variables);
-#elif UNIX
-        UnixEnvironmentManager.SetEnvironmentVariables(variables);
-#else
-        throw new PlatformNotSupportedException("当前平台不支持");
-#endif
+        if (Platform.IsWindows)
+        {
+            WindowsEnvironmentManager.SetEnvironmentVariables(variables);
+        }
+        else if (Platform.IsUnix)
+        {
+            UnixEnvironmentManager.SetEnvironmentVariables(variables);
+        }
+        else
+        {
+            throw new PlatformNotSupportedException("当前平台不支持");
+        }
     }
 
     /// <summary>

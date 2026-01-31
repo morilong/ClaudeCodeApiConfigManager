@@ -1,5 +1,3 @@
-#if WINDOWS
-
 namespace ClaudeCodeApiConfigManager.Services;
 
 /// <summary>
@@ -18,5 +16,3 @@ public static class WindowsEnvironmentManager
         Console.WriteLine(Constants.Messages.WindowsRestartHint);
     }
 }
-
-#endif

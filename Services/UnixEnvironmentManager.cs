@@ -1,5 +1,3 @@
-#if UNIX
-
 namespace ClaudeCodeApiConfigManager.Services;
 
 /// <summary>
@@ -222,5 +220,3 @@ public static class UnixEnvironmentManager
         Console.WriteLine("或打开新终端窗口自动生效。");
     }
 }
-
-#endif
