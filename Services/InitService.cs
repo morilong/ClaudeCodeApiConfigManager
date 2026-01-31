@@ -26,7 +26,8 @@ public static class InitService
         try
         {
             var configDir = Platform.GetConfigDirectory();
-            if (File.Exists(Path.Combine(configDir, Constants.Files.Settings)) &&
+            if (Platform.IsWindows &&
+                File.Exists(Path.Combine(configDir, Constants.Files.Settings)) &&
                 Platform.IsDirectoryInPath(configDir))
             {
                 return ShowInstalled();
@@ -73,15 +74,6 @@ public static class InitService
                     return 0;
                 }
 
-                // 创建配置文件（如果不存在）
-                if (!configExists)
-                {
-                    if (!CreateDefaultConfigFile(settingsPath))
-                    {
-                        return 1;
-                    }
-                }
-
                 // 执行全局安装（如果 PATH 不存在）
                 if (!pathExists)
                 {
@@ -89,6 +81,15 @@ public static class InitService
                     if (!installSuccess)
                     {
                         Console.WriteLine("安装失败。");
+                        return 1;
+                    }
+                }
+
+                // 创建配置文件（如果不存在）
+                if (!configExists)
+                {
+                    if (!CreateDefaultConfigFile(settingsPath))
+                    {
                         return 1;
                     }
                 }
