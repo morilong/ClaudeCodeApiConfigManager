@@ -7,10 +7,13 @@ namespace ClaudeCodeApiConfigManager;
 
 class Program
 {
+    private static readonly IConsoleOutput Output = new ConsoleOutput();
+
     static int Main(string[] args)
     {
         try
         {
+            // 解决特殊字符乱码问题
             Console.OutputEncoding = Encoding.UTF8;
 
             // 检查是否请求显示版本
@@ -52,8 +55,8 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("发生错误：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error("发生错误：");
+            Output.Error(ex.ToString());
             return 1;
         }
     }

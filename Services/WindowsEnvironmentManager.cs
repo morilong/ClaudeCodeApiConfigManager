@@ -5,6 +5,8 @@ namespace ClaudeCodeApiConfigManager.Services;
 /// </summary>
 public static class WindowsEnvironmentManager
 {
+    private static readonly IConsoleOutput Output = new ConsoleOutput();
+
     public static void SetEnvironmentVariables(Dictionary<string, string> variables)
     {
         foreach (var variable in variables)
@@ -12,7 +14,7 @@ public static class WindowsEnvironmentManager
             Environment.SetEnvironmentVariable(variable.Key, variable.Value, EnvironmentVariableTarget.User);
         }
 
-        Console.WriteLine(Constants.Messages.WindowsEnvUpdate);
-        Console.WriteLine(Constants.Messages.WindowsRestartHint);
+        Output.WriteLine(Constants.Messages.WindowsEnvUpdate);
+        Output.WriteLine(Constants.Messages.WindowsRestartHint);
     }
 }

@@ -1,4 +1,5 @@
 using ClaudeCodeApiConfigManager.Models;
+using Spectre.Console;
 
 namespace ClaudeCodeApiConfigManager.Services;
 
@@ -28,9 +29,7 @@ public class ConfigService
         {
             if (!forceOverwrite)
             {
-                _output.Write($"配置 '{config.Name}' 已存在。是否覆盖？(y/N): ");
-                var response = _output.ReadLine()?.Trim().ToLower();
-                if (response != "y" && response != "yes")
+                if (!_output.Confirm($"配置 '{config.Name}' 已存在。是否覆盖？", false))
                 {
                     _output.WriteLine("操作已取消。");
                     return false;
@@ -44,7 +43,7 @@ public class ConfigService
         }
 
         _repository.Save(settings);
-        _output.WriteLine($"配置 '{config.Name}' 已成功添加。");
+        _output.Success($"配置 '{config.Name}' 已成功添加。");
         return true;
     }
 
@@ -58,7 +57,7 @@ public class ConfigService
 
         if (config == null)
         {
-            _output.WriteError($"错误: 配置 '{name}' 不存在。");
+            _output.Error($"错误: 配置 '{name}' 不存在。");
             return false;
         }
 
@@ -68,11 +67,11 @@ public class ConfigService
         if (settings.ActiveConfigName == name)
         {
             settings.ActiveConfigName = null;
-            _output.WriteLine($"已删除当前活动配置 '{name}'。");
+            _output.Success($"已删除当前活动配置 '{name}'。");
         }
         else
         {
-            _output.WriteLine($"配置 '{name}' 已删除。");
+            _output.Success($"配置 '{name}' 已删除。");
         }
 
         _repository.Save(settings);
@@ -138,14 +137,31 @@ public class ConfigService
             return;
         }
 
+        var table = new Table()
+            .BorderColor(Color.Grey)
+            .Border(TableBorder.Rounded)
+            .AddColumn(new TableColumn("[bold]●[/]").Centered())
+            .AddColumn(new TableColumn("[bold]名称[/]"))
+            .AddColumn(new TableColumn("[bold]模型[/]"))
+            .AddColumn(new TableColumn("[bold]BaseURL[/]"));
+
         var activeName = settings.ActiveConfigName;
 
         foreach (var config in configs)
         {
             var isActive = config.Name == activeName;
-            var prefix = isActive ? "* " : "  ";
-            _output.WriteLine($"{prefix}{config.Name} ({config.Model})");
+            var marker = isActive ? "[green]●[/]" : " ";
+            var nameStyle = isActive ? "[green]" : "";
+            var nameStyleEnd = isActive ? "[/]" : "";
+            table.AddRow(
+                marker,
+                $"{nameStyle}{Markup.Escape(config.Name)}{nameStyleEnd}",
+                $"{nameStyle}{Markup.Escape(config.Model)}{nameStyleEnd}",
+                $"{nameStyle}{Markup.Escape(config.BaseUrl)}{nameStyleEnd}"
+            );
         }
+
+        _output.WriteTable(table);
     }
 
     /// <summary>
@@ -170,22 +186,39 @@ public class ConfigService
         var config = settings.Configs.Find(c => c.Name == settings.ActiveConfigName);
         if (config == null)
         {
-            _output.WriteLine("当前配置不存在，请使用 use 命令设置配置。");
+            _output.Warn("当前配置不存在，请使用 use 命令设置配置。");
             return;
         }
 
-        _output.WriteLine("当前配置:");
-        _output.WriteLine($"  名称: {config.Name}");
-        _output.WriteLine($"  模型: {config.Model}");
-        _output.WriteLine($"  BaseURL: {config.BaseUrl}");
+        // 主配置信息表格
+        var configTable = new Table()
+            .Border(TableBorder.Rounded)
+            .BorderColor(Color.Grey)
+            .AddColumn(new TableColumn("[bold]属性[/]"))
+            .AddColumn(new TableColumn("[bold]值[/]"));
 
+        configTable.AddRow("名称", Markup.Escape(config.Name));
+        configTable.AddRow("模型", Markup.Escape(config.Model));
+        configTable.AddRow("BaseURL", Markup.Escape(config.BaseUrl));
+
+        _output.WriteTable(configTable);
+
+        // 自定义参数表格
         if (config.CustomParams.Count > 0)
         {
-            _output.WriteLine("  自定义参数:");
+            _output.WriteLine();
+            var paramTable = new Table()
+                .BorderColor(Color.Grey)
+                .Border(TableBorder.Rounded)
+                .AddColumn(new TableColumn("[blue]自定义参数[/]"))
+                .AddColumn(new TableColumn("[blue]值[/]"));
+
             foreach (var param in config.CustomParams)
             {
-                _output.WriteLine($"    {param.Key}={param.Value}");
+                paramTable.AddRow(Markup.Escape(param.Key), Markup.Escape(param.Value));
             }
+
+            _output.WriteTable(paramTable);
         }
     }
 
@@ -199,13 +232,13 @@ public class ConfigService
 
         if (config == null)
         {
-            _output.WriteError($"错误: 配置 '{name}' 不存在。");
+            _output.Error($"错误: 配置 '{name}' 不存在。");
             return false;
         }
 
         config.AuthToken = token;
         _repository.Save(settings);
-        _output.WriteLine($"配置 '{name}' 的 Token 已更新。");
+        _output.Success($"配置 '{name}' 的 Token 已更新。");
         return true;
     }
 }

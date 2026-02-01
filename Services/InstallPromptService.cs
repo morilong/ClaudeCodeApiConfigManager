@@ -119,12 +119,12 @@ public static class InstallPromptService
 
         // 使用 Spectre.Console 创建选择提示
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule("[yellow]选择安装目录[/]").RuleStyle("grey"));
+        AnsiConsole.Write(new Rule("[blue]选择安装目录[/]").RuleStyle("grey"));
         AnsiConsole.WriteLine();
 
         var selected = AnsiConsole.Prompt(
             new SelectionPrompt<InstallOption>()
-                .Title("[green]请选择安装目录：[/]")
+                .Title("[blue]请选择安装目录：[/]")
                 .PageSize(10)
                 .AddChoices(options)
                 .UseConverter(o => $"{o.Name} [dim]({o.Directory})[/]")
@@ -184,22 +184,18 @@ public static class InstallPromptService
     public static bool ConfirmInstallPlan(InstallOption selectedOption, InstallPlan originalPlan)
     {
         AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule("[yellow]安装计划[/]").RuleStyle("grey"));
+        AnsiConsole.Write(new Rule("[blue]安装计划[/]").RuleStyle("grey"));
         AnsiConsole.WriteLine();
 
         var table = new Table()
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey);
-        table.AddColumn("[yellow]项目[/]");
-        table.AddColumn("[blue]详情[/]");
+        table.AddColumn("[bold]项目[/]");
+        table.AddColumn("[bold]详情[/]");
 
         table.AddRow("安装目录", selectedOption.Directory);
+        table.AddRow("配置目录", originalPlan.ConfigDirectory);
         table.AddRow("安装方式", selectedOption.Description);
-
-        if (!string.IsNullOrEmpty(originalPlan.ConfigDirectory))
-        {
-            table.AddRow("配置目录", originalPlan.ConfigDirectory);
-        }
 
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();

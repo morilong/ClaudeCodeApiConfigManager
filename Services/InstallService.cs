@@ -45,19 +45,20 @@ public class InstallPlan
 /// </summary>
 public static class InstallService
 {
-    private static InstallPlan? _cachedPlan;
+    private static readonly IConsoleOutput Output = new ConsoleOutput();
+    private static InstallPlan? CachedPlan;
 
     /// <summary>
     /// 检测安装计划（不执行安装）
     /// </summary>
     public static InstallPlan DetectInstallPlan()
     {
-        if (_cachedPlan != null)
-            return _cachedPlan;
+        if (CachedPlan != null)
+            return CachedPlan;
 
         return Platform.IsWindows ?
-            _cachedPlan = DetectWindowsInstallPlan() :
-            _cachedPlan = DetectUnixInstallPlan();
+            CachedPlan = DetectWindowsInstallPlan() :
+            CachedPlan = DetectUnixInstallPlan();
     }
 
     /// <summary>
@@ -96,8 +97,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("安装失败：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error("安装失败：");
+            Output.Error(ex.ToString());
             return false;
         }
     }
@@ -120,8 +121,8 @@ public static class InstallService
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("卸载失败：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error("卸载失败：");
+            Output.Error(ex.ToString());
         }
     }
 
@@ -227,7 +228,7 @@ public static class InstallService
             var exeSource = FindExecutableFile(baseDir);
             if (exeSource == null)
             {
-                Console.Error.WriteLine("找不到可执行文件。");
+                Output.Error("找不到可执行文件。");
                 return false;
             }
 
@@ -235,12 +236,9 @@ public static class InstallService
 
             if (File.Exists(exeDest))
             {
-                Console.Write($"检测到 {exeDest} {Constants.Messages.FileAlreadyExists}。");
-                Console.Write($" {Constants.Messages.AskOverwrite} ");
-                var response = Console.ReadLine()?.Trim().ToLower();
-                if (response != "y" && response != "yes")
+                if (!Output.Confirm($"检测到 {exeDest} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
                 {
-                    Console.WriteLine("跳过文件复制。");
+                    Output.WriteLine("跳过文件复制。");
                 }
                 else
                 {
@@ -310,14 +308,14 @@ public static class InstallService
                 pathEntries.Add(directory);
                 var newPath = string.Join(Path.PathSeparator, pathEntries);
                 Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.User);
-                Console.WriteLine($"已将 {directory} 添加到环境变量 PATH。");
-                Console.WriteLine(Constants.Messages.WindowsRestartHint);
+                Output.Success($"已将 {directory} 添加到环境变量 PATH。");
+                Output.WriteLine(Constants.Messages.WindowsRestartHint);
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("无法修改 PATH 环境变量：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error("无法修改 PATH 环境变量：");
+            Output.Error(ex.ToString());
             throw;
         }
     }
@@ -333,32 +331,30 @@ public static class InstallService
 
         if (existExeFile)
         {
-            Console.WriteLine($"检测到 ccm 安装目录: {installDir}");
+            Output.WriteLine($"检测到 ccm 安装目录: {installDir}");
         }
-        Console.WriteLine();
-        Console.WriteLine("这将卸载 ccm 全局命令：");
+        Output.WriteLine();
+        Output.WriteLine("这将卸载 ccm 全局命令：");
 
         if (existExeFile)
         {
-            Console.WriteLine($"- 从 PATH 环境变量中移除: {installDir}");
-            Console.WriteLine($"- 删除: {exeFilePath}");
+            Output.Warn($"- 从 PATH 环境变量中移除: {installDir}");
+            Output.Warn($"- 删除: {exeFilePath}");
         }
 
         // 询问是否删除配置文件
         if (removeConfig)
         {
-            Console.WriteLine($"- 删除配置文件: {Platform.GetSettingsFilePath()}");
+            Output.Warn($"- 删除配置文件: {Platform.GetSettingsFilePath()}");
         }
         else
         {
-            Console.WriteLine();
-            Console.Write($"{Constants.Messages.AskRemoveConfig} ");
-            var response = Console.ReadLine()?.Trim().ToLower();
-            removeConfig = response == "y" || response == "yes";
+            Output.WriteLine();
+            removeConfig = Output.Confirm(Constants.Messages.AskRemoveConfig, false);
         }
 
-        Console.WriteLine();
-        Console.WriteLine("正在卸载...");
+        Output.WriteLine();
+        Output.WriteLine("正在卸载...");
 
         // 从 PATH 移除
         try
@@ -369,13 +365,13 @@ public static class InstallService
             {
                 var newPath = string.Join(Path.PathSeparator, pathEntries);
                 Environment.SetEnvironmentVariable("PATH", newPath, EnvironmentVariableTarget.User);
-                Console.WriteLine($"✓ {Constants.Messages.RemovedFromPath}: {installDir}");
+                Output.Success($"✓ {Constants.Messages.RemovedFromPath}: {installDir}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("无法从 PATH 移除目录：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error("无法从 PATH 移除目录：");
+            Output.Error(ex.ToString());
         }
 
         // 删除配置文件
@@ -387,12 +383,13 @@ public static class InstallService
                 if (File.Exists(settingsPath))
                 {
                     File.Delete(settingsPath);
+                    Output.Success($"✓ {Constants.Messages.ConfigFileDeleted}：{settingsPath}");
                 }
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine("删除配置文件失败：");
-                Console.Error.WriteLine(ex.ToString());
+                Output.Error("删除配置文件失败：");
+                Output.Error(ex.ToString());
             }
         }
 
@@ -409,16 +406,25 @@ public static class InstallService
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
                 });
+                if (Directory.Exists(installDir) &&
+                    !Directory.EnumerateFileSystemEntries(installDir).Any())
+                {
+                    Output.Success($"✓ {Constants.Messages.InstallDirDeleted}：{installDir}");
+                }
+                else
+                {
+                    Output.Success($"✓ 已删除：{exeFilePath}");
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"删除 {Constants.Install.WinExeName} 失败：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error($"删除 {Constants.Install.WinExeName} 失败：");
+            Output.Error(ex.ToString());
         }
 
-        Console.WriteLine();
-        Console.WriteLine(Constants.Messages.UninstallComplete);
+        Output.WriteLine();
+        Output.WriteLine(Constants.Messages.UninstallComplete);
     }
 
     #endregion
@@ -494,11 +500,11 @@ public static class InstallService
         {
             if (needSudo)
             {
-                Console.WriteLine($"需要创建目录 {targetDir}，请输入 sudo 密码：");
+                Output.WriteLine($"需要创建目录 {targetDir}，请输入 sudo 密码：");
                 var result = ExecuteCommand("sudo", $"mkdir -p {targetDir}");
                 if (result != 0)
                 {
-                    Console.Error.WriteLine($"无法创建目录 {targetDir}");
+                    Output.Error($"无法创建目录 {targetDir}");
                     return false;
                 }
             }
@@ -513,12 +519,9 @@ public static class InstallService
         // 检查符号链接是否已存在
         if (File.Exists(linkPath) || Directory.Exists(linkPath))
         {
-            Console.Write($"检测到 {linkPath} {Constants.Messages.FileAlreadyExists}。");
-            Console.Write($" {Constants.Messages.AskOverwrite} ");
-            var response = Console.ReadLine()?.Trim().ToLower();
-            if (response != "y" && response != "yes")
+            if (!Output.Confirm($"检测到 {linkPath} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
             {
-                Console.WriteLine("跳过符号链接创建。");
+                Output.WriteLine("跳过符号链接创建。");
                 return true;
             }
 
@@ -543,11 +546,11 @@ public static class InstallService
         // 创建符号链接
         if (needSudo)
         {
-            Console.WriteLine($"创建符号链接需要 sudo 权限，请输入密码：");
+            Output.WriteLine($"创建符号链接需要 sudo 权限，请输入密码：");
             var result = ExecuteCommand("sudo", $"ln -sf \"{currentExe}\" \"{linkPath}\"");
             if (result != 0)
             {
-                Console.Error.WriteLine($"无法创建符号链接: {linkPath}");
+                Output.Error($"无法创建符号链接: {linkPath}");
                 return false;
             }
         }
@@ -559,10 +562,10 @@ public static class InstallService
         // 如果目录不在 PATH 中，显示警告
         if (!IsInPath(targetDir))
         {
-            Console.WriteLine();
-            Console.WriteLine($"注意: {targetDir} 不在 PATH 中。");
-            Console.WriteLine("请添加以下内容到 ~/.bashrc 或 ~/.zshrc:");
-            Console.WriteLine($"  export PATH=\"{targetDir}:$PATH\"");
+            Output.WriteLine();
+            Output.Warn($"注意: {targetDir} 不在 PATH 中。");
+            Output.Warn("请添加以下内容到 ~/.bashrc 或 ~/.zshrc:");
+            Output.Warn($"  export PATH=\"{targetDir}:$PATH\"");
         }
 
         return true;
@@ -592,54 +595,52 @@ public static class InstallService
 
         if (installedPath == null)
         {
-            Console.WriteLine("未检测到全局安装。");
+            Output.WriteLine("未检测到全局安装。");
             return;
         }
 
-        Console.WriteLine($"检测到 ccm 安装位置: {installedPath}");
-        Console.WriteLine();
-        Console.WriteLine("这将卸载 ccm 全局命令。");
-        Console.WriteLine($"- 删除符号链接: {installedPath}");
+        Output.WriteLine($"检测到 ccm 安装位置: {installedPath}");
+        Output.WriteLine();
+        Output.WriteLine("这将卸载 ccm 全局命令。");
+        Output.Warn($"- 删除符号链接: {installedPath}");
 
         if (needSudo)
         {
-            Console.WriteLine("- 注意: 此操作需要 sudo 权限");
+            Output.Warn("- 注意: 此操作需要 sudo 权限");
         }
 
         // 询问是否删除配置文件
         if (removeConfig)
         {
-            Console.WriteLine($"- 删除配置文件: {Platform.GetSettingsFilePath()}");
+            Output.Warn($"- 删除配置文件: {Platform.GetSettingsFilePath()}");
         }
         else
         {
-            Console.WriteLine();
-            Console.Write($"{Constants.Messages.AskRemoveConfig} ");
-            var response = Console.ReadLine()?.Trim().ToLower();
-            removeConfig = response == "y" || response == "yes";
+            Output.WriteLine();
+            removeConfig = Output.Confirm(Constants.Messages.AskRemoveConfig, false);
         }
 
-        Console.WriteLine();
-        Console.WriteLine("正在卸载...");
+        Output.WriteLine();
+        Output.WriteLine("正在卸载...");
 
         // 删除符号链接
         try
         {
             if (needSudo)
             {
-                Console.WriteLine("删除符号链接需要 sudo 权限，请输入密码：");
+                Output.WriteLine("删除符号链接需要 sudo 权限，请输入密码：");
                 ExecuteCommand("sudo", $"rm -f \"{installedPath}\"");
             }
             else
             {
                 File.Delete(installedPath);
             }
-            Console.WriteLine($"✓ {Constants.Messages.SymlinkDeleted}: {installedPath}");
+            Output.Success($"✓ {Constants.Messages.SymlinkDeleted}：{installedPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine("删除符号链接失败：");
-            Console.Error.WriteLine(ex.ToString());
+            Output.Error("删除符号链接失败：");
+            Output.Error(ex.ToString());
         }
 
         // 删除配置文件
@@ -651,6 +652,7 @@ public static class InstallService
                 if (File.Exists(settingsPath))
                 {
                     File.Delete(settingsPath);
+                    Output.Success($"✓ {Constants.Messages.ConfigFileDeleted}：{settingsPath}");
                 }
 
                 var configDir = Path.GetDirectoryName(settingsPath);
@@ -658,6 +660,7 @@ public static class InstallService
                     !Directory.EnumerateFileSystemEntries(configDir).Any())
                 {
                     Directory.Delete(configDir);
+                    Output.Success($"✓ {Constants.Messages.ConfigDirDeleted}：{configDir}");
                 }
             }
             catch
@@ -666,8 +669,8 @@ public static class InstallService
             }
         }
 
-        Console.WriteLine();
-        Console.WriteLine(Constants.Messages.UninstallComplete);
+        Output.WriteLine();
+        Output.WriteLine(Constants.Messages.UninstallComplete);
     }
 
     /// <summary>
@@ -677,9 +680,9 @@ public static class InstallService
     {
         try
         {
-            var process = new System.Diagnostics.Process
+            var process = new Process
             {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
+                StartInfo = new ProcessStartInfo
                 {
                     FileName = command,
                     Arguments = arguments,

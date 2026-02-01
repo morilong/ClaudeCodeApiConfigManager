@@ -5,6 +5,7 @@ namespace ClaudeCodeApiConfigManager.Services;
 /// </summary>
 public static class UnixEnvironmentManager
 {
+    private static readonly IConsoleOutput Output = new ConsoleOutput();
     private static readonly string HomeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     private static readonly string CcmDir = Path.Combine(HomeDir, Constants.Dirs.CcmDir);
 
@@ -150,7 +151,7 @@ public static class UnixEnvironmentManager
         writer.WriteLine();
         writer.WriteLine(initScriptContent);
 
-        Console.WriteLine($"已添加初始化代码到 {configPath}");
+        Output.Success($"已添加初始化代码到：{configPath}");
     }
 
     /// <summary>
@@ -194,10 +195,10 @@ public static class UnixEnvironmentManager
     /// </summary>
     private static void PrintReloadInstructions(ShellType shellType)
     {
-        Console.WriteLine();
-        Console.WriteLine(Constants.Messages.UnixEnvUpdate);
-        Console.WriteLine();
-        Console.WriteLine("运行以下命令使更改立即生效：");
+        Output.WriteLine();
+        Output.WriteLine(Constants.Messages.UnixEnvUpdate);
+        Output.WriteLine();
+        Output.WriteLine(Constants.Messages.UnixRunCmdEffective);
 
         string sourceCommand;
         if (shellType == ShellType.Fish)
@@ -215,8 +216,8 @@ public static class UnixEnvironmentManager
             sourceCommand = $"source {configFile}";
         }
 
-        Console.WriteLine(sourceCommand);
-        Console.WriteLine();
-        Console.WriteLine("或打开新终端窗口自动生效。");
+        Output.Success(sourceCommand);
+        Output.WriteLine();
+        Output.WriteLine(Constants.Messages.UnixOpenNewWindowEffective);
     }
 }

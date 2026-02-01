@@ -9,8 +9,8 @@ namespace ClaudeCodeApiConfigManager.Commands;
 public static class CommandBuilder
 {
     private static readonly ConfigRepository ConfigRepository = new(Platform.GetSettingsFilePath());
-    private static readonly IConsoleOutput ConsoleOutput = new ConsoleOutput();
-    private static readonly ConfigService ConfigService = new(ConfigRepository, ConsoleOutput);
+    private static readonly IConsoleOutput Output = new ConsoleOutput();
+    private static readonly ConfigService ConfigService = new(ConfigRepository, Output);
 
     /// <summary>
     /// 创建 add 命令
@@ -42,20 +42,20 @@ public static class CommandBuilder
             // 验证必填字段
             if (string.IsNullOrEmpty(config.AuthToken))
             {
-                ConsoleOutput.WriteError("错误: 未找到 API Token。");
-                ConsoleOutput.WriteError("用法: ccm add <name> <TOKEN> <BASE_URL> <MODEL> [自定义参数...]");
+                Output.Error("错误: 未找到 API Token。");
+                Output.Error("用法: ccm add <name> <TOKEN> <BASE_URL> <MODEL> [自定义参数...]");
                 return;
             }
 
             if (string.IsNullOrEmpty(config.BaseUrl))
             {
-                ConsoleOutput.WriteError("错误: 未找到 Base URL（必须以 http:// 或 https:// 开头）。");
+                Output.Error("错误: 未找到 Base URL（必须以 http:// 或 https:// 开头）。");
                 return;
             }
 
             if (string.IsNullOrEmpty(config.Model))
             {
-                ConsoleOutput.WriteError("错误: 未指定模型名称。");
+                Output.Error("错误: 未指定模型名称。");
                 return;
             }
 
@@ -102,7 +102,7 @@ public static class CommandBuilder
             var config = ConfigService.GetConfig(name);
             if (config == null)
             {
-                ConsoleOutput.WriteError($"错误: 配置 '{name}' 不存在。");
+                Output.Error($"错误: 配置 '{name}' 不存在。");
                 return;
             }
 
@@ -113,8 +113,8 @@ public static class CommandBuilder
             }
             catch (Exception ex)
             {
-                ConsoleOutput.WriteError("错误：");
-                ConsoleOutput.WriteError(ex.ToString());
+                Output.Error("错误：");
+                Output.Error(ex.ToString());
             }
         });
 

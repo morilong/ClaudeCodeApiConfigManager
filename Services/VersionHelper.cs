@@ -8,6 +8,8 @@ namespace ClaudeCodeApiConfigManager.Services;
 /// </summary>
 public static class VersionHelper
 {
+    private static readonly IConsoleOutput _console = new ConsoleOutput();
+
     /// <summary>
     /// 获取当前程序版本号
     /// </summary>
@@ -25,7 +27,7 @@ public static class VersionHelper
     /// </summary>
     public static void PrintVersion()
     {
-        Console.WriteLine(GetVersion());
+        _console.WriteLine(GetVersion());
     }
 
     /// <summary>
