@@ -164,7 +164,7 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
-          name: v1.0.0
+          name: ${{ github.ref_name }}
 
   # ==================== 第三步：发布到 Gitee ====================
   release-gitee:
@@ -208,9 +208,9 @@ jobs:
           gitee_owner: ${{ secrets.GITEE_OWNER }}
           gitee_repo: ${{ secrets.GITEE_REPO }}
           gitee_token: ${{ secrets.GITEE_TOKEN }}
-          gitee_tag_name: v1.0.0
-          gitee_release_name: v1.0.0
-          gitee_release_body: "🚀 自动化发布 v1.0.0\n\n构建时间：${{ github.event.head_commit.timestamp }}\n提交：${{ github.sha }}"
-          gitee_target_commitish: master
+          gitee_tag_name: ${{ github.ref_name }}
+          gitee_release_name: ${{ github.ref_name }}
+          gitee_release_body: "🚀 自动化发布 ${{ github.ref_name }}\n\n构建时间：${{ github.event.head_commit.timestamp }}\n提交：${{ github.sha }}"
+          gitee_target_commitish: ${{ github.ref }}
           gitee_upload_retry_times: 3
           gitee_files: ./release/*
