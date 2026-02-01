@@ -12,47 +12,74 @@ env:
   CONFIGURATION: Release
 
 jobs:
-  build-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            runtime: linux-x64
-          - os: windows-latest
-            runtime: win-x86
-          - os: windows-latest
-            runtime: win-x64
-          - os: macos-latest
-            runtime: osx-x64
-
+  build-linux-x64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 安装 .NET 10
-        uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
-      - name: 发布可执行文件
-        run: |
-          dotnet publish ./${{ env.PROJECT_NAME }}.csproj \
-            -c ${{ env.CONFIGURATION }} \
-            -r ${{ matrix.runtime }} \
-            --self-contained true \
-            -p:PublishAot=true \
-            -p:PublishTrimmed=true \
-            -o ./publish/${{ matrix.runtime }}
-
-      - name: 显示构建结果
-        run: |
-          echo "=== 构建产物 ==="
-          ls -la ./publish/${{ matrix.runtime }}
-
-      - name: 上传构建产物
-        uses: actions/upload-artifact@v4
+      - name: 发布 linux-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-x64 -p:PublishAot=true -o ./publish/linux-x64
+      - run: ls -la ./publish/linux-x64
+      - uses: actions/upload-artifact@v4
         with:
-          name: ccm-${{ matrix.runtime }}
-          path: ./publish/${{ matrix.runtime }}
+          name: ccm-linux-x64
+          path: ./publish/linux-x64
+          retention-days: 7
+
+  build-win-x86:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 win-x86
+        shell: pwsh
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x86 -p:PublishAot=true -o ./publish/win-x86
+      - shell: pwsh
+        run: ls -la ./publish/win-x86
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-win-x86
+          path: ./publish/win-x86
+          retention-days: 7
+
+  build-win-x64:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 win-x64
+        shell: pwsh
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 -p:PublishAot=true -o ./publish/win-x64
+      - shell: pwsh
+        run: ls -la ./publish/win-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-win-x64
+          path: ./publish/win-x64
+          retention-days: 7
+
+  build-osx-x64:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 osx-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-x64 -p:PublishAot=true -o ./publish/osx-x64
+      - run: ls -la ./publish/osx-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-osx-x64
+          path: ./publish/osx-x64
           retention-days: 7

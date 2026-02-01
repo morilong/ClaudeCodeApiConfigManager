@@ -11,68 +11,131 @@ env:
   CONFIGURATION: Release
 
 jobs:
-  # ==================== 第一步：构建 ====================
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          # Linux
-          - os: ubuntu-latest
-            runtime: linux-x64
-            output: ccm-linux-x64
-          - os: ubuntu-latest
-            runtime: linux-arm64
-            output: ccm-linux-arm64
-
-          # Windows
-          - os: windows-latest
-            runtime: win-x86
-            output: ccm-win-x86
-          - os: windows-latest
-            runtime: win-x64
-            output: ccm-win-x64
-          - os: windows-latest
-            runtime: win-arm64
-            output: ccm-win-arm64
-
-          # macOS
-          - os: macos-latest
-            runtime: osx-x64
-            output: ccm-osx-x64
-          - os: macos-latest
-            runtime: osx-arm64
-            output: ccm-osx-arm64
-
+  # ==================== 第一步：构建（串行）====================
+  build-linux-x64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 安装 .NET 10
-        uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
-      - name: 发布可执行文件
-        run: |
-          dotnet publish ./${{ env.PROJECT_NAME }}.csproj \
-            -c ${{ env.CONFIGURATION }} \
-            -r ${{ matrix.runtime }} \
-            --self-contained true \
-            -p:PublishAot=true \
-            -p:PublishTrimmed=true \
-            -o ./publish/${{ matrix.output }}
-
-      - name: 上传构建产物（原始可执行文件）
-        uses: actions/upload-artifact@v4
+      - name: 发布 linux-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-x64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-linux-x64
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.output }}-bin
-          path: ./publish/${{ matrix.output }}
+          name: ccm-linux-x64-bin
+          path: ./publish/ccm-linux-x64
+          retention-days: 7
+
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: build-linux-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 linux-arm64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-arm64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-linux-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-linux-arm64-bin
+          path: ./publish/ccm-linux-arm64
+          retention-days: 7
+
+  build-win-x86:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    needs: build-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 win-x86
+        shell: pwsh
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x86 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-win-x86
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-win-x86-bin
+          path: ./publish/ccm-win-x86
+          retention-days: 7
+
+  build-win-x64:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    needs: build-win-x86
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 win-x64
+        shell: pwsh
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-win-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-win-x64-bin
+          path: ./publish/ccm-win-x64
+          retention-days: 7
+
+  build-win-arm64:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    needs: build-win-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 win-arm64
+        shell: pwsh
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-arm64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-win-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-win-arm64-bin
+          path: ./publish/ccm-win-arm64
+          retention-days: 7
+
+  build-osx-x64:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    needs: build-win-arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 osx-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-x64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-osx-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-osx-x64-bin
+          path: ./publish/ccm-osx-x64
+          retention-days: 7
+
+  build-osx-arm64:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    needs: build-osx-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 发布 osx-arm64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-arm64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-osx-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ccm-osx-arm64-bin
+          path: ./publish/ccm-osx-arm64
           retention-days: 7
 
   # ==================== 第二步：发布到 GitHub ====================
   release-github:
-    needs: build
+    needs: [build-linux-x64, build-linux-arm64, build-win-x86, build-win-x64, build-win-arm64, build-osx-x64, build-osx-arm64]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -94,9 +157,8 @@ jobs:
           for dir in ./artifacts/ccm-win*-bin/*; do
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
-              outputname="${dirname%-bin}"
               cd "$dir"
-              zip -r "../../../release/${outputname}.zip" .
+              zip -r "../../../release/${dirname}.zip" .
               cd -
             fi
           done
@@ -125,7 +187,7 @@ jobs:
 
   # ==================== 第三步：发布到 Gitee ====================
   release-gitee:
-    needs: build
+    needs: [build-linux-x64, build-linux-arm64, build-win-x86, build-win-x64, build-win-arm64, build-osx-x64, build-osx-arm64]
     runs-on: ubuntu-latest
 
     steps:
@@ -142,9 +204,8 @@ jobs:
           for dir in ./artifacts/ccm-win*-bin/*; do
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
-              outputname="${dirname%-bin}"
               cd "$dir"
-              zip -r "../../../release/${outputname}.zip" .
+              zip -r "../../../release/${dirname}.zip" .
               cd -
             fi
           done
