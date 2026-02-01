@@ -1,0 +1,199 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: ClaudeCodeApiConfigManager
+  CONFIGURATION: Release
+
+jobs:
+  # ==================== 第一步：构建 ====================
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - os: ubuntu-latest
+            runtime: linux-x64
+            output: ccm-linux-x64
+          - os: ubuntu-latest
+            runtime: linux-arm64
+            output: ccm-linux-arm64
+
+          # Windows
+          - os: windows-latest
+            runtime: win-x86
+            output: ccm-win-x86
+          - os: windows-latest
+            runtime: win-x64
+            output: ccm-win-x64
+          - os: windows-latest
+            runtime: win-arm64
+            output: ccm-win-arm64
+
+          # macOS
+          - os: macos-latest
+            runtime: osx-x64
+            output: ccm-osx-x64
+          - os: macos-latest
+            runtime: osx-arm64
+            output: ccm-osx-arm64
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 发布可执行文件
+        run: |
+          dotnet publish ./${{ env.PROJECT_NAME }}.csproj \
+            -c ${{ env.CONFIGURATION }} \
+            -r ${{ matrix.runtime }} \
+            --self-contained true \
+            -p:PublishAot=true \
+            -p:PublishTrimmed=true \
+            -o ./publish/${{ matrix.output }}
+
+      - name: 上传构建产物（原始可执行文件）
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output }}-bin
+          path: ./publish/${{ matrix.output }}
+          retention-days: 7
+
+  # ==================== 第二步：发布到 GitHub ====================
+  release-github:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: 显示文件结构
+        run: |
+          echo "=== 文件结构 ==="
+          ls -R ./artifacts
+
+      - name: 压缩 Windows 平台文件
+        run: |
+          mkdir -p ./release
+          for dir in ./artifacts/ccm-win*-bin/*; do
+            if [ -d "$dir" ]; then
+              dirname=$(basename "$dir")
+              outputname="${dirname%-bin}"
+              cd "$dir"
+              zip -r "../../../release/${outputname}.zip" .
+              cd -
+            fi
+          done
+
+      - name: 压缩 Unix 平台文件
+        run: |
+          for dir in ./artifacts/ccm-*-bin; do
+            if [ -d "$dir" ] && [[ ! "$dir" =~ win ]]; then
+              dirname=$(basename "$dir")
+              outputname="${dirname%-bin}"
+              tar -czf "./release/${outputname}.tar.gz" -C "$dir" .
+            fi
+          done
+
+      - name: 显示发布文件
+        run: ls -lh ./release/
+
+      - name: 发布到 GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./release/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          name: ${{ github.ref_name }}
+
+  # ==================== 第三步：发布到 Gitee ====================
+  release-gitee:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 下载所有构建产物
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: 压缩所有平台文件
+        run: |
+          mkdir -p ./release
+
+          # Windows 平台
+          for dir in ./artifacts/ccm-win*-bin/*; do
+            if [ -d "$dir" ]; then
+              dirname=$(basename "$dir")
+              outputname="${dirname%-bin}"
+              cd "$dir"
+              zip -r "../../../release/${outputname}.zip" .
+              cd -
+            fi
+          done
+
+          # Unix 平台
+          for dir in ./artifacts/ccm-*-bin; do
+            if [ -d "$dir" ] && [[ ! "$dir" =~ win ]]; then
+              dirname=$(basename "$dir")
+              outputname="${dirname%-bin}"
+              tar -czf "./release/${outputname}.tar.gz" -C "$dir" .
+            fi
+          done
+
+      - name: 创建 Gitee Release
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
+          GITEE_REPO: ${{ secrets.GITEE_REPO }}
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+
+          # 检查 Release 是否已存在，不存在则创建
+          if ! curl -s -f "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${VERSION}" > /dev/null; then
+            echo "创建 Gitee Release: ${VERSION}"
+            curl -X POST \
+              "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases" \
+              -H "Authorization: token ${GITEE_TOKEN}" \
+              -d "tag_name=${VERSION}" \
+              -d "name=${VERSION}" \
+              -d "body=🚀 自动化发布 ${VERSION}%0A%0A构建时间：$(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A提交：${{ github.sha }}" \
+              -d "target_commitish=${{ github.ref }}"
+          else
+            echo "Release ${VERSION} 已存在"
+          fi
+
+      - name: 上传文件到 Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+          GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
+          GITEE_REPO: ${{ secrets.GITEE_REPO }}
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+
+          for file in ./release/*; do
+            filename=$(basename "$file")
+            echo "上传: $filename"
+
+            curl -X POST \
+              "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${VERSION}/assets" \
+              -H "Authorization: token ${GITEE_TOKEN}" \
+              -F "file=@${file}"
+          done

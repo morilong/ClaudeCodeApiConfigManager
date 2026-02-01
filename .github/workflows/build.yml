@@ -1,0 +1,58 @@
+name: Build Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: ClaudeCodeApiConfigManager
+  CONFIGURATION: Release
+
+jobs:
+  build-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+          - os: windows-latest
+            runtime: win-x86
+          - os: windows-latest
+            runtime: win-x64
+          - os: macos-latest
+            runtime: osx-x64
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: 发布可执行文件
+        run: |
+          dotnet publish ./${{ env.PROJECT_NAME }}.csproj \
+            -c ${{ env.CONFIGURATION }} \
+            -r ${{ matrix.runtime }} \
+            --self-contained true \
+            -p:PublishAot=true \
+            -p:PublishTrimmed=true \
+            -o ./publish/${{ matrix.runtime }}
+
+      - name: 显示构建结果
+        run: |
+          echo "=== 构建产物 ==="
+          ls -la ./publish/${{ matrix.runtime }}
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ccm-${{ matrix.runtime }}
+          path: ./publish/${{ matrix.runtime }}
+          retention-days: 7
