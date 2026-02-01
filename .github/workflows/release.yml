@@ -137,12 +137,10 @@ jobs:
       - name: 压缩 Windows 平台文件
         run: |
           mkdir -p ./release
-          for dir in ./artifacts/ccm-win*-bin/*; do
+          for dir in ./artifacts/ccm-win*-bin; do
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
-              cd "$dir"
-              zip -r "../../../release/${dirname}.zip" .
-              cd -
+              zip -r "./release/${dirname}.zip" -C "$dir" .
             fi
           done
 
@@ -184,12 +182,10 @@ jobs:
           mkdir -p ./release
 
           # Windows 平台
-          for dir in ./artifacts/ccm-win*-bin/*; do
+          for dir in ./artifacts/ccm-win*-bin; do
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
-              cd "$dir"
-              zip -r "../../../release/${dirname}.zip" .
-              cd -
+              zip -r "./release/${dirname}.zip" -C "$dir" .
             fi
           done
 
@@ -214,12 +210,7 @@ jobs:
           gitee_token: ${{ secrets.GITEE_TOKEN }}
           gitee_tag_name: v1.0.0
           gitee_release_name: v1.0.0
-          gitee_release_body: |
-            🚀 自动化发布 v1.0.0
-
-            构建时间：$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-            提交：${{ github.sha }}
-          gitee_target_commitish: ${{ github.ref }}
+          gitee_release_body: "🚀 自动化发布 v1.0.0\n\n构建时间：${{ github.event.head_commit.timestamp }}\n提交：${{ github.sha }}"
+          gitee_target_commitish: master
           gitee_upload_retry_times: 3
-          gitee_files: |
-            ./release/*
+          gitee_files: ./release/*
