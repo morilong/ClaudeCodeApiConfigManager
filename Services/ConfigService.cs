@@ -210,12 +210,12 @@ public class ConfigService
             var paramTable = new Table()
                 .BorderColor(Color.Grey)
                 .Border(TableBorder.Rounded)
-                .AddColumn(new TableColumn("[blue]自定义参数[/]"))
-                .AddColumn(new TableColumn("[blue]值[/]"));
+                .AddColumn(new TableColumn("[bold]自定义参数[/]"))
+                .AddColumn(new TableColumn("[bold]值[/]"));
 
             foreach (var param in config.CustomParams)
             {
-                paramTable.AddRow(Markup.Escape(param.Key), Markup.Escape(param.Value));
+                paramTable.AddRow(Markup.Escape(param.Key), Markup.Escape(param.Value?.ToString() ?? ""));
             }
 
             _output.WriteTable(paramTable);

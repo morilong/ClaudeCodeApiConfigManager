@@ -15,7 +15,7 @@ public static class CommandHelper
         string token = string.Empty;
         string baseUrl = string.Empty;
         string model = string.Empty;
-        var customParams = new Dictionary<string, string>();
+        var customParams = new Dictionary<string, object>();
 
         // 自动识别 URL（基于 http:// 或 https:// 前缀）
         foreach (var arg in args)
@@ -140,7 +140,7 @@ public static class CommandHelper
         // 添加自定义参数
         foreach (var param in config.CustomParams)
         {
-            variables[param.Key] = param.Value;
+            variables[param.Key] = param.Value?.ToString() ?? "";
         }
 
         return variables;

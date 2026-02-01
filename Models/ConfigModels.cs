@@ -20,7 +20,7 @@ public class ApiConfig
     public string Model { get; set; } = string.Empty;
 
     [JsonPropertyName("customParams")]
-    public Dictionary<string, string> CustomParams { get; set; } = new();
+    public Dictionary<string, object> CustomParams { get; set; } = [];
 }
 
 /// <summary>
