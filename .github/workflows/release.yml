@@ -219,42 +219,24 @@ jobs:
             fi
           done
 
-      - name: 创建 Gitee Release
-        env:
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-          GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
-          GITEE_REPO: ${{ secrets.GITEE_REPO }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
+      - name: 显示发布文件
+        run: ls -lh ./release/
 
-          # 检查 Release 是否已存在，不存在则创建
-          if ! curl -s -f "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/tags/${VERSION}" > /dev/null; then
-            echo "创建 Gitee Release: ${VERSION}"
-            curl -X POST \
-              "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases" \
-              -H "Authorization: token ${GITEE_TOKEN}" \
-              -d "tag_name=${VERSION}" \
-              -d "name=${VERSION}" \
-              -d "body=🚀 自动化发布 ${VERSION}%0A%0A构建时间：$(date -u +'%Y-%m-%d %H:%M:%S UTC')%0A提交：${{ github.sha }}" \
-              -d "target_commitish=${{ github.ref }}"
-          else
-            echo "Release ${VERSION} 已存在"
-          fi
+      - name: 发布到 Gitee Releases
+        uses: nICEnnnnnnnLee/action-gitee-release@master
+        with:
+          gitee_action: create_release
+          gitee_owner: ${{ secrets.GITEE_OWNER }}
+          gitee_repo: ${{ secrets.GITEE_REPO }}
+          gitee_token: ${{ secrets.GITEE_TOKEN }}
+          gitee_tag_name: ${{ github.ref_name }}
+          gitee_release_name: ${{ github.ref_name }}
+          gitee_release_body: |
+            🚀 自动化发布 ${{ github.ref_name }}
 
-      - name: 上传文件到 Gitee
-        env:
-          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-          GITEE_OWNER: ${{ secrets.GITEE_OWNER }}
-          GITEE_REPO: ${{ secrets.GITEE_REPO }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-
-          for file in ./release/*; do
-            filename=$(basename "$file")
-            echo "上传: $filename"
-
-            curl -X POST \
-              "https://gitee.com/api/v5/repos/${GITEE_OWNER}/${GITEE_REPO}/releases/${VERSION}/assets" \
-              -H "Authorization: token ${GITEE_TOKEN}" \
-              -F "file=@${file}"
-          done
+            构建时间：$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+            提交：${{ github.sha }}
+          gitee_target_commitish: ${{ github.ref }}
+          gitee_upload_retry_times: 3
+          gitee_files: |
+            ./release/*
