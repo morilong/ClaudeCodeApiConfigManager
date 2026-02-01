@@ -21,7 +21,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: 发布 linux-x64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-x64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-linux-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-x64 -p:PublishAot=true -o ./publish/ccm-linux-x64
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-linux-x64-bin
@@ -38,7 +38,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: 发布 linux-arm64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-arm64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-linux-arm64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-arm64 -p:PublishAot=true -o ./publish/ccm-linux-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-linux-arm64-bin
@@ -56,7 +56,7 @@ jobs:
           dotnet-version: '10.0.x'
       - name: 发布 win-x86
         shell: pwsh
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x86 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-win-x86
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x86 -p:PublishAot=true -o ./publish/ccm-win-x86
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-win-x86-bin
@@ -74,7 +74,7 @@ jobs:
           dotnet-version: '10.0.x'
       - name: 发布 win-x64
         shell: pwsh
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-win-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 -p:PublishAot=true -o ./publish/ccm-win-x64
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-win-x64-bin
@@ -92,7 +92,7 @@ jobs:
           dotnet-version: '10.0.x'
       - name: 发布 win-arm64
         shell: pwsh
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-arm64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-win-arm64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-arm64 -p:PublishAot=true -o ./publish/ccm-win-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-win-arm64-bin
@@ -109,7 +109,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: 发布 osx-x64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-x64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-osx-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-x64 -p:PublishAot=true -o ./publish/ccm-osx-x64
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-osx-x64-bin
@@ -126,7 +126,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: 发布 osx-arm64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-arm64 --self-contained true -p:PublishAot=true -p:PublishTrimmed=true -p:AotMode=full -p:IlcGenerateCompleteTypeMetadata=false -o ./publish/ccm-osx-arm64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-arm64 -p:PublishAot=true -o ./publish/ccm-osx-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-osx-arm64-bin

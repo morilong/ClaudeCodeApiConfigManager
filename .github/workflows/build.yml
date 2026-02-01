@@ -41,7 +41,7 @@ jobs:
         shell: pwsh
         run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x86 -p:PublishAot=true -o ./publish/win-x86
       - shell: pwsh
-        run: ls -la ./publish/win-x86
+        run: Get-ChildItem ./publish/win-x86 | Format-Table -AutoSize
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-win-x86
@@ -60,7 +60,7 @@ jobs:
         shell: pwsh
         run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 -p:PublishAot=true -o ./publish/win-x64
       - shell: pwsh
-        run: ls -la ./publish/win-x64
+        run: Get-ChildItem ./publish/win-x64 | Format-Table -AutoSize
       - uses: actions/upload-artifact@v4
         with:
           name: ccm-win-x64
