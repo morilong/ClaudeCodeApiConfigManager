@@ -23,7 +23,7 @@ public static class InitService
     /// <summary>
     /// 运行初始化向导
     /// </summary>
-    public static int RunInitializeWizard()
+    public static int RunInitializeWizard(bool isForce)
     {
         try
         {
@@ -56,7 +56,7 @@ public static class InitService
                 ShowWelcomeMessage();
 
                 // 让用户选择安装目录
-                var selectedOption = InstallPromptService.PromptInstallDirectory(installPlan);
+                var selectedOption = InstallPromptService.PromptInstallDirectory(installPlan, isForce);
                 if (selectedOption == null)
                 {
                     Output.WriteLine("安装已取消。");
@@ -75,7 +75,7 @@ public static class InitService
                 }
 
                 // 确认安装计划
-                if (!InstallPromptService.ConfirmInstallPlan(selectedOption, installPlan))
+                if (!InstallPromptService.ConfirmInstallPlan(selectedOption, installPlan, isForce))
                 {
                     Output.WriteLine("安装已取消。");
                     return 0;

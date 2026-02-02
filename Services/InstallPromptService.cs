@@ -97,7 +97,7 @@ public static class InstallPromptService
     /// <summary>
     /// 显示安装目录选择提示
     /// </summary>
-    public static InstallOption? PromptInstallDirectory(InstallPlan defaultPlan)
+    public static InstallOption? PromptInstallDirectory(InstallPlan defaultPlan, bool isForce)
     {
         var options = GetInstallOptions(defaultPlan);
 
@@ -115,6 +115,11 @@ public static class InstallPromptService
                 defaultIndex = i;
                 break;
             }
+        }
+
+        if (isForce)
+        {
+            return options[0];
         }
 
         // 使用 Spectre.Console 创建选择提示
@@ -181,7 +186,7 @@ public static class InstallPromptService
     /// <summary>
     /// 显示安装计划摘要并确认
     /// </summary>
-    public static bool ConfirmInstallPlan(InstallOption selectedOption, InstallPlan originalPlan)
+    public static bool ConfirmInstallPlan(InstallOption selectedOption, InstallPlan originalPlan, bool isForce)
     {
         AnsiConsole.WriteLine();
         AnsiConsole.Write(new Rule("[blue]安装计划[/]").RuleStyle("grey"));
@@ -194,11 +199,16 @@ public static class InstallPromptService
         table.AddColumn("[bold]详情[/]");
 
         table.AddRow("安装目录", selectedOption.Directory);
-        table.AddRow("配置目录", originalPlan.ConfigDirectory);
+        table.AddRow("配置文件", Path.Combine(originalPlan.ConfigDirectory, Constants.Files.Settings));
         table.AddRow("安装方式", selectedOption.Description);
 
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();
+
+        if (isForce)
+        {
+            return true;
+        }
 
         return AnsiConsole.Confirm("[green]是否继续安装？[/]", true);
     }

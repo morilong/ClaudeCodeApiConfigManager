@@ -23,10 +23,11 @@ class Program
                 return 0;
             }
 
-            // 无参数时运行初始化向导
-            if (args.Length == 0)
+            var isInstallForce = string.Join(" ", args).Trim().Equals("install -y", StringComparison.OrdinalIgnoreCase) == true;
+            if (args.Length == 0 || isInstallForce)
             {
-                var result = InitService.RunInitializeWizard();
+                // 运行初始化向导
+                var result = InitService.RunInitializeWizard(isInstallForce);
                 if (result != -1)
                 {
                     return result;
