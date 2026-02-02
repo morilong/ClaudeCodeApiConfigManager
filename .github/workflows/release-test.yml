@@ -8,7 +8,7 @@ env:
   CONFIGURATION: Release
 
 jobs:
-  # ==================== 第一步：构建（串行）====================
+  # ==================== 第一步：构建（并行）====================
   build-linux-x64:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -18,17 +18,16 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: 发布 linux-x64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-x64 -p:PublishAot=true -o ./publish/ccm-linux-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r linux-x64 -p:PublishAot=true -p:DebugType=None -p:DebugSymbols=false -o ./publish/ccm-linux-x64
       - uses: actions/upload-artifact@v4
         with:
-          name: ccm-linux-x64-bin
+          name: ccm-linux-x64
           path: ./publish/ccm-linux-x64
           retention-days: 7
 
   build-win-x64:
     runs-on: windows-latest
     timeout-minutes: 45
-    needs: build-linux-x64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -36,10 +35,10 @@ jobs:
           dotnet-version: '10.0.x'
       - name: 发布 win-x64
         shell: pwsh
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 -p:PublishAot=true -o ./publish/ccm-win-x64
+        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x64 -p:PublishAot=true -p:DebugType=None -p:DebugSymbols=false -o ./publish/ccm-win-x64
       - uses: actions/upload-artifact@v4
         with:
-          name: ccm-win-x64-bin
+          name: ccm-win-x64
           path: ./publish/ccm-win-x64
           retention-days: 7
 
@@ -64,7 +63,7 @@ jobs:
       - name: 压缩 Windows 平台文件
         run: |
           mkdir -p ./release
-          for dir in ./artifacts/ccm-win*-bin; do
+          for dir in ./artifacts/ccm-win*; do
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
               cd "$dir" && zip -r "../../release/${dirname}.zip" . && cd -
@@ -73,11 +72,10 @@ jobs:
 
       - name: 压缩 Unix 平台文件
         run: |
-          for dir in ./artifacts/ccm-*-bin; do
+          for dir in ./artifacts/ccm-*; do
             if [ -d "$dir" ] && [[ ! "$dir" =~ win ]]; then
               dirname=$(basename "$dir")
-              outputname="${dirname%-bin}"
-              tar -czf "./release/${outputname}.tar.gz" -C "$dir" .
+              tar -czf "./release/${dirname}.tar.gz" -C "$dir" .
             fi
           done
 
@@ -110,7 +108,7 @@ jobs:
           mkdir -p ./release
 
           # Windows 平台
-          for dir in ./artifacts/ccm-win*-bin; do
+          for dir in ./artifacts/ccm-win*; do
             if [ -d "$dir" ]; then
               dirname=$(basename "$dir")
               cd "$dir" && zip -r "../../release/${dirname}.zip" . && cd -
@@ -118,27 +116,59 @@ jobs:
           done
 
           # Unix 平台
-          for dir in ./artifacts/ccm-*-bin; do
+          for dir in ./artifacts/ccm-*; do
             if [ -d "$dir" ] && [[ ! "$dir" =~ win ]]; then
               dirname=$(basename "$dir")
-              outputname="${dirname%-bin}"
-              tar -czf "./release/${outputname}.tar.gz" -C "$dir" .
+              tar -czf "./release/${dirname}.tar.gz" -C "$dir" .
             fi
           done
 
       - name: 显示发布文件
-        run: ls -lh ./release/
+        run: |
+          echo "=== 发布文件列表 ==="
+          ls -lh ./release/
 
-      - name: 发布到 Gitee Releases
-        uses: nICEnnnnnnnLee/action-gitee-release@master
-        with:
-          gitee_action: create_release
-          gitee_owner: ${{ secrets.GITEE_OWNER }}
-          gitee_repo: ${{ secrets.GITEE_REPO }}
-          gitee_token: ${{ secrets.GITEE_TOKEN }}
-          gitee_tag_name: v1.0.0
-          gitee_release_name: v1.0.0
-          gitee_release_body: "🚀 自动化发布 v1.0.0\n\n测试版本"
-          gitee_target_commitish: master
-          gitee_upload_retry_times: 3
-          gitee_files: ./release/*
+      - name: 创建 Gitee Release
+        id: create_release
+        run: |
+          RESPONSE=$(curl -X POST \
+            "https://gitee.com/api/v5/repos/${{ secrets.GITEE_OWNER }}/${{ secrets.GITEE_REPO }}/releases" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "access_token": "${{ secrets.GITEE_TOKEN }}",
+              "tag_name": "v1.0.0",
+              "name": "v1.0.0",
+              "body": "🚀 自动化发布 v1.0.0\n\n测试版本",
+              "prerelease": false,
+              "target_commitish": "master"
+            }')
+          
+          echo "Response: $RESPONSE"
+          RELEASE_ID=$(echo $RESPONSE | jq -r '.id')
+          echo "Release ID: $RELEASE_ID"
+          echo "release_id=$RELEASE_ID" >> $GITHUB_OUTPUT
+
+      - name: 上传文件到 Gitee Release
+        run: |
+          RELEASE_ID="${{ steps.create_release.outputs.release_id }}"
+          
+          if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" == "null" ]; then
+            echo "错误：无法获取 Release ID"
+            exit 1
+          fi
+          
+          for file in ./release/*; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              echo "正在上传: $filename"
+              
+              curl -X POST \
+                "https://gitee.com/api/v5/repos/${{ secrets.GITEE_OWNER }}/${{ secrets.GITEE_REPO }}/releases/${RELEASE_ID}/attach_files" \
+                -H "Content-Type: multipart/form-data" \
+                -F "access_token=${{ secrets.GITEE_TOKEN }}" \
+                -F "file=@${file}"
+              
+              echo "✅ 上传完成: $filename"
+              sleep 2
+            fi
+          done
