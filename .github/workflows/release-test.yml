@@ -1,9 +1,6 @@
-name: Build and Release
+name: Build and Release Test
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 env:
@@ -28,28 +25,10 @@ jobs:
           path: ./publish/ccm-linux-x64
           retention-days: 7
 
-  build-win-x86:
-    runs-on: windows-latest
-    timeout-minutes: 45
-    needs: build-linux-x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-      - name: 发布 win-x86
-        shell: pwsh
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-x86 -p:PublishAot=true -o ./publish/ccm-win-x86
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ccm-win-x86-bin
-          path: ./publish/ccm-win-x86
-          retention-days: 7
-
   build-win-x64:
     runs-on: windows-latest
     timeout-minutes: 45
-    needs: build-win-x86
+    needs: build-linux-x64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -64,61 +43,9 @@ jobs:
           path: ./publish/ccm-win-x64
           retention-days: 7
 
-  build-win-arm64:
-    runs-on: windows-latest
-    timeout-minutes: 45
-    needs: build-win-x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-      - name: 发布 win-arm64
-        shell: pwsh
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r win-arm64 -p:PublishAot=true -o ./publish/ccm-win-arm64
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ccm-win-arm64-bin
-          path: ./publish/ccm-win-arm64
-          retention-days: 7
-
-  build-osx-x64:
-    runs-on: macos-latest
-    timeout-minutes: 45
-    needs: build-win-arm64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-      - name: 发布 osx-x64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-x64 -p:PublishAot=true -o ./publish/ccm-osx-x64
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ccm-osx-x64-bin
-          path: ./publish/ccm-osx-x64
-          retention-days: 7
-
-  build-osx-arm64:
-    runs-on: macos-latest
-    timeout-minutes: 45
-    needs: build-osx-x64
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-      - name: 发布 osx-arm64
-        run: dotnet publish ./${{ env.PROJECT_NAME }}.csproj -c ${{ env.CONFIGURATION }} -r osx-arm64 -p:PublishAot=true -o ./publish/ccm-osx-arm64
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ccm-osx-arm64-bin
-          path: ./publish/ccm-osx-arm64
-          retention-days: 7
-
   # ==================== 第二步：发布到 GitHub ====================
   release-github:
-    needs: [build-linux-x64, build-win-x86, build-win-x64, build-win-arm64, build-osx-x64, build-osx-arm64]
+    needs: [build-linux-x64, build-win-x64]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -168,7 +95,7 @@ jobs:
 
   # ==================== 第三步：发布到 Gitee ====================
   release-gitee:
-    needs: [build-linux-x64, build-win-x86, build-win-x64, build-win-arm64, build-osx-x64, build-osx-arm64]
+    needs: [build-linux-x64, build-win-x64]
     runs-on: ubuntu-latest
 
     steps:
