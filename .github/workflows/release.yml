@@ -219,7 +219,7 @@ jobs:
               \"access_token\": \"${{ secrets.GITEE_TOKEN }}\",
               \"tag_name\": \"${TAG_NAME}\",
               \"name\": \"${TAG_NAME}\",
-              \"body\": \"🚀 自动化发布 ${TAG_NAME}\\n\\n构建时间：$(date -u +'%Y-%m-%d %H:%M:%S UTC')\\n提交：${{ github.sha }}\",
+              \"body\": \"完整的更新日志: https://gitee.com/${{ secrets.GITEE_OWNER }}/${{ secrets.GITEE_REPO }}/commits/${TAG_NAME}\",
               \"prerelease\": false,
               \"target_commitish\": \"master\"
             }")
@@ -270,7 +270,7 @@ jobs:
               fi
               
               # 避免 API 限流
-              sleep 3
+              sleep 2
             fi
           done
           
