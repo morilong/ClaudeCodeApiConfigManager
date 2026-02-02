@@ -10,45 +10,24 @@ env:
 jobs:
   build-linux-arm64:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      
-      # 安装交叉编译工具链
-      - name: 安装 ARM64 交叉编译工具
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            clang \
-            llvm \
-            lld \
-            gcc-aarch64-linux-gnu \
-            g++-aarch64-linux-gnu \
-            binutils-aarch64-linux-gnu \
-            zlib1g-dev
-      
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
       
-      # 配置交叉编译环境变量
-      - name: 配置编译环境
-        run: |
-          echo "COMPlus_CrossCompiling=1" >> $GITHUB_ENV
-          echo "ROOTFS_DIR=/usr/aarch64-linux-gnu" >> $GITHUB_ENV
-      
-      # 发布 ARM64 版本
       - name: 发布 linux-arm64
         run: |
           dotnet publish ./${{ env.PROJECT_NAME }}.csproj \
             -c ${{ env.CONFIGURATION }} \
             -r linux-arm64 \
-            -p:PublishAot=true \
+            --self-contained true \
             -p:DebugType=None \
             -p:DebugSymbols=false \
-            -p:LinkerFlavor=lld \
-            -p:CppCompilerAndLinker=clang \
-            -p:SysRoot=/usr/aarch64-linux-gnu \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=true \
+            -p:EnableCompressionInSingleFile=true \
             -o ./publish/ccm-linux-arm64
       
       - uses: actions/upload-artifact@v4
