@@ -124,6 +124,7 @@ public static class InitService
         }
     }
 
+#pragma warning disable CA1416 // 仅在 Windows 上支持
     private static int ShowInstalled()
     {
         if (Platform.IsWindows &&
@@ -136,6 +137,7 @@ public static class InitService
         }
         return -1;
     }
+#pragma warning restore CA1416
 
     /// <summary>
     /// 显示欢迎信息
