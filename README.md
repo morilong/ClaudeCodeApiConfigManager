@@ -10,46 +10,121 @@
 
 ## 功能特性
 
-- 多配置管理 - 添加、列出、删除多个 API 配置
-- 快速切换 - 一条命令在不同配置间切换
-- 环境变量自动设置 - 自动配置平台特定的环境变量
-- 跨平台支持 - Windows、Linux、macOS
-- 智能参数识别 - 自动识别 Token、Base URL 和模型参数
-- AOT 编译 - 发布为原生可执行文件，启动快速
+- **多配置管理** - 添加、列出、删除多个 API 配置
+- **快速切换** - 一条命令在不同配置间切换
+- **环境变量自动设置** - 自动配置平台特定的环境变量
+- **智能参数识别** - 自动识别 Token、Base URL 和模型参数
+- **跨平台支持** - Windows、Linux、macOS
+- **AOT 编译** - 发布为原生可执行文件，启动快速
+- **一键安装** - 支持交互式安装和静默安装 (`install -y`)
+
 
 ## 安装
+
+### 一键安装
+
+#### 国内用户（Gitee 源）
+
+**Linux / macOS**
+```bash
+curl -fsSL https://gitee.com/morilong/claude-code-api-config-manager/raw/master/scripts/install.sh | bash
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://gitee.com/morilong/claude-code-api-config-manager/raw/master/scripts/install.ps1 | iex
+```
+
+**Windows (CMD)**
+```cmd
+curl -fsSL https://gitee.com/morilong/claude-code-api-config-manager/raw/master/scripts/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+#### 国外用户（GitHub 源）
+
+**Linux / macOS**
+```bash
+curl -fsSL https://raw.githubusercontent.com/morilong/ClaudeCodeApiConfigManager/master/scripts/install-github.sh | bash
+```
+
+**Windows (PowerShell)**
+```powershell
+irm https://raw.githubusercontent.com/morilong/ClaudeCodeApiConfigManager/master/scripts/install-github.ps1 | iex
+```
+
+**Windows (CMD)**
+```cmd
+curl -fsSL https://raw.githubusercontent.com/morilong/ClaudeCodeApiConfigManager/master/scripts/install-github.cmd -o install-github.cmd && install-github.cmd && del install-github.cmd
+```
+
+### 手动安装
+
+从 [Releases](https://github.com/morilong/ClaudeCodeApiConfigManager/releases) 页面下载对应平台的压缩包：
+
+| 平台 | 架构 | 下载链接 |
+|------|------|----------|
+| Windows | x64 | [ccm-win-x64.zip](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-win-x64.zip) |
+| Windows | x86 | [ccm-win-x86.zip](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-win-x86.zip) |
+| Windows | ARM64 | [ccm-win-arm64.zip](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-win-arm64.zip) |
+| Linux | x64 | [ccm-linux-x64.tar.gz](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-linux-x64.tar.gz) |
+| Linux | ARM64 | [ccm-linux-arm64.tar.gz](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-linux-arm64.tar.gz) |
+| macOS | x64 | [ccm-osx-x64.tar.gz](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-osx-x64.tar.gz) |
+| macOS | ARM64 | [ccm-osx-arm64.tar.gz](https://gitee.com/morilong/claude-code-api-config-manager/releases/download/latest/ccm-osx-arm64.tar.gz) |
+
+**解压后执行安装**
+- Windows：双击 `ccm.exe`
+- Linux/macOS：`./ccm`
 
 ### 从源码构建
 
 ```bash
 # 克隆仓库
-git clone https://github.com/morilong/ClaudeCodeApiConfigManager.git
-cd ClaudeCodeApiConfigManager
-或
 git clone https://gitee.com/morilong/claude-code-api-config-manager.git
 cd claude-code-api-config-manager
 
-# 发布为单文件可执行程序
+或
+
+git clone https://github.com/morilong/ClaudeCodeApiConfigManager.git
+cd ClaudeCodeApiConfigManager
+
+# 发布为可执行程序
 dotnet publish -c Release
 ```
 
-### 直接使用预编译版本
-
-下载对应平台的可执行文件，将其添加到系统 PATH 中。
+---
 
 ## 使用方法
 
-### 添加配置
+### 列出所有配置
+```bash
+ccm ls
+```
+
+### 修改指定配置的 API Token
+默认自带了 DeepSeek、智谱AI、MiniMax、Kimi、通义千问 的配置模板，只需修改 API Token 即可使用：
+```
+ccm st <name> <token>
+
+# 示例
+ccm st ds sk-xxx
+```
+
+### 切换配置
+```bash
+ccm use ds
+```
+
+### 添加新配置
 
 ```bash
 # 智谱AI
-ccm add zhipu xxx.xxx https://open.bigmodel.cn/api/anthropic glm-4.7
+ccm add zhipu xxx https://open.bigmodel.cn/api/anthropic glm-4.7
 
 # DeepSeek
 ccm add ds sk-xxx https://api.deepseek.com/anthropic deepseek-chat
 
 # MiniMax
-ccm add mm xxx.xxx-xxx https://api.minimaxi.com/anthropic MiniMax-M2.1
+ccm add minimax xxx https://api.minimaxi.com/anthropic MiniMax-M2.1
 
 # Kimi
 ccm add kimi sk-xxx https://api.moonshot.cn/anthropic kimi-k2.5
@@ -67,68 +142,17 @@ ccm add ds sk-xxx https://api.deepseek.com/anthropic deepseek-chat API_TIMEOUT_M
 ```
 - 格式：KEY=VALUE（如：API_TIMEOUT_MS=600000）
 
-工具会智能识别参数：
-- 以 `sk-` 开头或较长的识别为 API Token
-- 以 `http://` 或 `https://` 开头的识别为 Base URL
-- `KEY=VALUE` 格式的识别为自定义参数
-- 剩余参数作为模型名称
-
-### 列出所有配置
-
-```bash
-ccm list
-# 或
-ccm ls
-```
-
-输出示例：
-```
-* zhipu - glm-4.7
-  ds - deepseek-chat
-```
-
-`*` 标记表示当前活动的配置。
-
-### 切换配置
-
-```bash
-ccm use zhipu
-```
-
-切换后会自动设置环境变量。在 Unix 平台上，可能需要重新加载 Shell 配置：
-
-```bash
-source ~/.bashrc  # bash
-source ~/.zshrc   # zsh
-source ~/.config/fish/config.fish  # fish
-```
-
 ### 查看当前配置
-
 ```bash
-ccm current
-# 或
 ccm c
 ```
 
-输出示例：
-```
-当前配置：
-  名称: zhipu
-  模型: glm-4.7
-  BaseURL: https://open.bigmodel.cn/api/anthropic
-```
-
 ### 删除配置
-
 ```bash
-ccm remove test1
-# 或
-ccm del test1
+ccm rm test1
 ```
 
 ### 查看版本
-
 ```bash
 ccm v
 ```
@@ -137,12 +161,16 @@ ccm v
 
 | 命令 | 描述 | 使用示例 |
 |-----|------|---------|
-| `add` | 添加新的 API 配置 | `ccm add zhipu xxx.xxx https://open.bigmodel.cn/api/anthropic glm-4.7` |
 | `list` / `ls` | 列出所有已保存的配置 | `ccm ls` |
+| `setToken` / `st` | 修改指定配置的 API Token | `ccm st zhipu xxx` |
+| `add` | 添加新的 API 配置 | `ccm add zhipu xxx https://open.bigmodel.cn/api/anthropic glm-4.7` |
 | `use` | 切换到指定配置（设置环境变量） | `ccm use zhipu` |
 | `current` / `c` | 查看当前使用的配置详情 | `ccm c` |
-| `remove` / `del` | 删除指定配置 | `ccm del test1` |
+| `remove` / `rm` / `del` | 删除指定配置 | `ccm rm test1` |
+| `uninstall` | 卸载 ccm 软件本身 | `ccm uninstall` |
 | `v` | 查看版本信息 | `ccm v` |
+
+---
 
 ## 环境变量
 
@@ -171,7 +199,7 @@ ccm v
   "configs": [
     {
       "name": "zhipu",
-      "authToken": "xxx.xxx",
+      "authToken": "your_zhipu_api_key",
       "baseUrl": "https://open.bigmodel.cn/api/anthropic",
       "model": "glm-4.7",
       "customParams": {}
@@ -211,7 +239,8 @@ ccm v
 ## 技术栈
 
 - **.NET 10.0** - 跨平台框架
-- **System.CommandLine 2.0.2** - CLI 命令解析
+- **System.CommandLine** (v2.0.2) - CLI 命令解析
+- **Spectre.Console** (v0.54.0) - 控制台美化和交互
 - **System.Text.Json** - JSON 序列化（Source Generation）
 - **AOT 编译** - 提前编译为本机代码
 
@@ -224,7 +253,7 @@ dotnet build
 # 运行项目
 dotnet run -- add test sk-xxx https://api.example.com model-name
 
-# 发布为 AOT 可执行文件
+# 发布为可执行文件
 dotnet publish -c Release
 ```
 
@@ -245,9 +274,13 @@ ClaudeCodeApiConfigManager/
 │   ├── Constants.cs               # 全局常量
 │   ├── VersionHelper.cs           # 版本信息管理
 │   ├── IConsoleOutput.cs          # 控制台输出接口
-│   ├── Platform.cs                # 平台检测
+│   ├── ConsoleStyles.cs           # 控制台样式常量
+│   ├── Platform.cs                # 平台检测和路径管理
 │   ├── WindowsEnvironmentManager.cs # Windows 环境变量管理
-│   └── UnixEnvironmentManager.cs   # Unix 环境变量管理
+│   ├── UnixEnvironmentManager.cs   # Unix 环境变量管理
+│   ├── InstallService.cs          # 安装/卸载服务
+│   ├── InitService.cs             # 初始化向导服务
+│   └── InstallPromptService.cs    # 安装提示服务
 └── ClaudeCodeApiConfigManager.csproj
 ```
 
@@ -257,10 +290,22 @@ ClaudeCodeApiConfigManager/
 A: Windows 使用用户级环境变量，设置后需要重启程序或打开新的终端窗口。
 
 ### Q: Linux/macOS 上切换配置后环境变量没有生效？
-A: 需要重新加载 Shell 配置文件，例如：`source ~/.zshrc` 或 `source ~/.bashrc`。
+A: 需要重新加载 Shell 配置文件，例如：`source ~/.bashrc` 或 `source ~/.zshrc`。
 
 ### Q: 如何备份我的配置？
-A: 直接复制配置文件即可。Windows 上在可执行文件目录，Unix 上在 `~/.config/ClaudeCodeApiConfigManager/`。
+A: 直接复制配置文件即可。
+- Windows 在可执行文件目录
+- Linux/macOS 在 `~/.config/ClaudeCodeApiConfigManager/`
+
+### Q: 解决 Claude Code 报错：Unable to connect to Anthropic services
+A: 编辑 `.claude.json` 文件：
+- Windows：`C:\Users\%username%\.claude.json`
+- Linux：`~/.claude.json`
+>
+在第一个 `{` 后面添加一行：
+```
+"hasCompletedOnboarding": true,
+```
 
 ### Q: win7/win8报错：`无法启动此程序，因为计算机中丢失 api-ms-win-crt-*.dll。`
 A: https://gitee.com/morilong/windows-sdk-ucrt-redistributable-dlls

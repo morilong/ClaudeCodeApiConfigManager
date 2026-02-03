@@ -32,6 +32,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **环境变量设置**: 自动设置平台特定的环境变量
 - **跨平台支持**: Windows、Linux、macOS
 - **智能参数识别**: 自动识别 Token、Base URL 和模型参数
+- **一键安装**: 支持交互式安装和静默安装 (`install -y`)
+- **配置模板**: 预设常见 API 提供商配置（zhipu、ds、minimax、kimi、qwen3、qwen3-coding）
 
 ## 构建和运行
 
@@ -56,6 +58,10 @@ ccm add <名称> <TOKEN> <BASE_URL> <MODEL> [自定义参数...]
 ccm list
 ccm ls
 
+# 修改指定配置的 API Token
+ccm setToken <名称> <TOKEN>
+ccm st <名称> <TOKEN>
+
 # 切换到指定配置
 ccm use <名称>
 
@@ -65,7 +71,11 @@ ccm c
 
 # 删除配置
 ccm remove <名称>
+ccm rm <名称>
 ccm del <名称>
+
+# 卸载 ccm
+ccm uninstall
 
 # 查看版本
 ccm v
@@ -82,6 +92,7 @@ ccm v
 ## 依赖包
 
 - **System.CommandLine** (v2.0.2) - CLI 命令解析
+- **Spectre.Console** (v0.54.0) - 控制台美化和交互
 - **System.Text.Json** - JSON 序列化（使用 Source Generation）
 
 ## 代码结构
@@ -101,9 +112,13 @@ ClaudeCodeApiConfigManager/
 │   ├── Constants.cs               # 全局常量定义
 │   ├── VersionHelper.cs           # 版本信息管理
 │   ├── IConsoleOutput.cs          # 控制台输出接口
+│   ├── ConsoleStyles.cs           # 控制台样式常量
 │   ├── Platform.cs                # 平台检测和路径管理
 │   ├── WindowsEnvironmentManager.cs # Windows 环境变量管理器
-│   └── UnixEnvironmentManager.cs   # Unix 环境变量管理器
+│   ├── UnixEnvironmentManager.cs   # Unix 环境变量管理器
+│   ├── InstallService.cs          # 安装/卸载服务
+│   ├── InitService.cs             # 初始化向导服务
+│   └── InstallPromptService.cs    # 安装提示服务
 └── ClaudeCodeApiConfigManager.csproj
 ```
 
@@ -128,6 +143,7 @@ ClaudeCodeApiConfigManager/
   - 配置的增删改查操作
   - 活动配置切换
   - 配置验证和冲突处理
+  - Token 单独修改功能
 
 - **ConfigRepository**: 配置文件持久化
   - 读取和写入 JSON 配置文件
@@ -137,12 +153,14 @@ ClaudeCodeApiConfigManager/
   - 自动识别 HTTP/HTTPS URL
   - 识别 sk- 前缀的 API Token
   - 解析 KEY=VALUE 格式的自定义参数
+  - 环境变量构建
 
 - **Platform**: 跨平台支持
   - 检测运行平台（Windows/Unix）
   - 获取平台特定的配置目录路径
   - Windows: 可执行文件目录
   - Unix: `~/.config/ClaudeCodeApiConfigManager/`
+  - PATH 环境变量检测
 
 - **WindowsEnvironmentManager**: Windows 环境变量管理
   - 使用 `Environment.SetEnvironmentVariable` 设置用户级环境变量
@@ -152,14 +170,34 @@ ClaudeCodeApiConfigManager/
   - 在 `~/.ccm/` 目录生成 Shell 脚本
   - 自动在 Shell 配置文件中添加初始化代码
 
+- **InstallService**: 安装和卸载服务
+  - 跨平台安装逻辑（Windows 复制文件/Unix 符号链接）
+  - PATH 环境变量管理
+  - 卸载时清理文件和环境变量
+  - 检测目录是否适合安装到 PATH
+
+- **InitService**: 初始化向导服务
+  - 首次运行时的配置文件创建
+  - 交互式安装向导
+  - 默认配置模板生成
+
+- **InstallPromptService**: 安装提示服务
+  - 安装目录选择
+  - 安装计划确认
+  - 自定义路径输入
+
+- **ConsoleStyles**: 控制台样式常量
+  - 统一管理 Spectre.Console 的颜色和样式标记
+
 - **VersionHelper**: 版本管理
   - 从程序集属性读取版本号
+  - 版本选项创建和参数检测
 
 ### Commands 层
 
 - **CommandBuilder**: CLI 命令定义
   - 使用 System.CommandLine 构建命令树
-  - 定义 add、list、use、current、remove、v 命令
+  - 定义 add、list、use、current、remove、setToken、uninstall、v 命令
 
 ## 配置文件
 
@@ -184,6 +222,14 @@ ClaudeCodeApiConfigManager/
   "activeConfigName": "当前活动配置名称"
 }
 ```
+
+**默认配置模板**（首次安装时自动创建）：
+- `zhipu` - 智谱AI (glm-4.7)
+- `ds` - DeepSeek (deepseek-chat)
+- `minimax` - MiniMax (MiniMax-M2.1)
+- `kimi` - Moonshot (kimi-k2.5)
+- `qwen3` - 通义千问 (qwen3-coder-plus)
+- `qwen3-coding` - 通义千问 Coding Plan (qwen3-coder-plus)
 
 ## 环境变量
 
@@ -230,3 +276,18 @@ Unix 环境管理器会：
 2. 在 `ConfigService.cs` 或新的 Service 类中实现业务逻辑
 3. 保持 AOT 兼容性，避免使用反射
 4. 使用 `IConsoleOutput` 接口进行输出，便于测试
+
+### Spectre.Console 使用
+
+项目使用 Spectre.Console 进行控制台美化和交互：
+- 使用 `AnsiConsole` 进行标记语法输出
+- 使用 `Table` 显示表格数据
+- 使用 `SelectionPrompt` 创建交互式选择
+- 使用 `Confirm` 显示确认提示
+
+参考 `ConsoleStyles.cs` 和 `IConsoleOutput.cs` 了解输出接口规范。
+
+### install 命令
+
+- 无参数：交互式安装向导
+- `install -y`：静默安装，使用默认选项无需确认
