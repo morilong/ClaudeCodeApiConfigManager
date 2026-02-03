@@ -93,7 +93,7 @@ public static class InstallService
     {
         try
         {
-            return Platform.IsWindows ? WindowsInstall(isForce) : UnixInstall(isForce);
+            return Platform.IsWindows ? WindowsInstall(isForce) : UnixInstall();
         }
         catch (Exception ex)
         {
@@ -236,7 +236,7 @@ public static class InstallService
 
             if (File.Exists(exeDest))
             {
-                if (isForce || Output.Confirm($"检测到 {exeDest} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
+                if (isForce || Output.Confirm($"检测到 {exeDest} 已存在。是否覆盖？", true))
                 {
                     File.Copy(exeSource, exeDest, true);
                 }
@@ -486,14 +486,54 @@ public static class InstallService
     }
 
     /// <summary>
+    /// 获取 Unix 永久安装目录（用于存放实际可执行文件）
+    /// </summary>
+    private static string GetUnixInstallBinDir()
+    {
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        return Path.Combine(homeDir, ".local", "share", "ccm");
+    }
+
+    /// <summary>
+    /// 检查路径是否为临时目录
+    /// </summary>
+    private static bool IsTempDirectory(string path)
+    {
+        var normalizedPath = path.Replace('\\', '/');
+        return normalizedPath.Contains("/tmp/") ||
+               normalizedPath.StartsWith("/tmp/") ||
+               normalizedPath.Contains("ccm-install-");
+    }
+
+    /// <summary>
     /// Unix 安装主流程
     /// </summary>
-    private static bool UnixInstall(bool isForce)
+    private static bool UnixInstall()
     {
         var plan = DetectInstallPlan();
         var targetDir = plan.InstallDirectory;
         var needSudo = targetDir.Equals(Constants.Install.UsrLocalBinDir, StringComparison.OrdinalIgnoreCase);
         var currentExe = Environment.ProcessPath ?? Environment.GetCommandLineArgs()[0];
+
+        // 如果当前可执行文件在临时目录，先复制到永久位置
+        if (IsTempDirectory(currentExe))
+        {
+            var installBinDir = GetUnixInstallBinDir();
+            Directory.CreateDirectory(installBinDir);
+
+            // 从文件名提取版本号（如 1.0.0）
+            var version = Path.GetFileName(currentExe);
+
+            // 直接用版本号作为文件名，支持多版本共存
+            var destExePath = Path.Combine(installBinDir, version);
+
+            File.Copy(currentExe, destExePath, true);
+            Output.Success($"已复制 ccm v{version} 到目录: {installBinDir}/");
+
+            // 设置可执行权限
+            ExecuteCommand("chmod", $"+x \"{destExePath}\"");
+            currentExe = destExePath;
+        }
 
         // 确保目标目录存在
         if (!Directory.Exists(targetDir))
@@ -519,12 +559,6 @@ public static class InstallService
         // 检查符号链接是否已存在
         if (File.Exists(linkPath) || Directory.Exists(linkPath))
         {
-            if (!isForce && !Output.Confirm($"检测到 {linkPath} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
-            {
-                Output.WriteLine("跳过符号链接创建。");
-                return true;
-            }
-
             // 删除现有链接
             if (needSudo)
             {
