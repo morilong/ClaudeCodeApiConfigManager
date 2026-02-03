@@ -26,10 +26,7 @@ echo [INFO] Detected platform: %PLATFORM%
 
 REM Get latest version
 echo [INFO] Fetching latest version...
-
-set VERSION=
-for /f "delims=" %%i in ('powershell -Command "$ProgressPreference = ''SilentlyContinue''; try { (Invoke-RestMethod -Uri ''https://api.github.com/repos/morilong/ClaudeCodeApiConfigManager/releases/latest'').tag_name -replace ''^v'', '' '' } catch { '' }"') do set VERSION=%%i
-
+for /f "usebackq tokens=*" %%i in (`powershell -Command "$r = try { Invoke-RestMethod -Uri 'https://api.github.com/repos/morilong/ClaudeCodeApiConfigManager/releases/latest' -ErrorAction Stop } catch { $null }; if ($r -and $r.tag_name) { $r.tag_name -replace '^v', '' } else { $null }"`) do set VERSION=%%i
 if "%VERSION%"=="" (
     echo [ERROR] Failed to get version from GitHub API
     echo.
