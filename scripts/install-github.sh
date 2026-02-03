@@ -134,8 +134,8 @@ download_and_extract() {
 run_install() {
     print_info "正在执行安装..."
 
-    # 执行 ccm install -y
-    if "./ccm" install -y; then
+    # 执行重命名后的可执行文件
+    if "./$VERSION" install -y; then
         # 安装完成
         echo ""
     else
