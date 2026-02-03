@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # ClaudeCodeApiConfigManager (ccm) 一键安装脚本 (Gitee 源)
 # 适用于 Linux 和 macOS
@@ -17,19 +17,19 @@ NC='\033[0m' # No Color
 
 # 打印带颜色的消息
 print_info() {
-    echo "${BLUE}[INFO]${NC} $1"
+    printf "${BLUE}[INFO]${NC} %s\n" "$1"
 }
 
 print_success() {
-    echo "${GREEN}[SUCCESS]${NC} $1"
+    printf "${GREEN}[SUCCESS]${NC} %s\n" "$1"
 }
 
 print_error() {
-    echo "${RED}[ERROR]${NC} $1"
+    printf "${RED}[ERROR]${NC} %s\n" "$1"
 }
 
 print_warning() {
-    echo "${YELLOW}[WARNING]${NC} $1"
+    printf "${YELLOW}[WARNING]${NC} %s\n" "$1"
 }
 
 # 检测操作系统和架构

@@ -1,21 +1,16 @@
 @echo off
-REM 切换到 UTF-8 代码页以正确显示中文
-chcp 65001 >nul
-REM ClaudeCodeApiConfigManager (ccm) 一键安装脚本 (CMD - Gitee 源)
-REM 适用于 Windows (CMD 批处理)
-REM
-REM 用法: curl -fsSL https://gitee.com/morilong/claude-code-api-config-manager/raw/master/scripts/install.cmd -o install.cmd && install.cmd && del install.cmd
-REM
-
 setlocal enabledelayedexpansion
 
+REM Switch to UTF-8 code page
+chcp 65001 >nul 2>&1
+
 echo.
 echo ==========================================
-echo   ClaudeCodeApiConfigManager 安装程序
+echo   ClaudeCodeApiConfigManager Installer
 echo ==========================================
 echo.
 
-REM 检测架构
+REM Detect architecture
 if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     set ARCH=x64
 ) else if "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
@@ -27,79 +22,80 @@ if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
 )
 
 set PLATFORM=win-%ARCH%
-echo [INFO] 检测到平台: %PLATFORM%
+echo [INFO] Detected platform: %PLATFORM%
 
-REM 获取最新版本
-echo [INFO] 获取最新版本信息...
-for /f "usebackq tokens=*" %%i in (`powershell -Command "$r = try { Invoke-RestMethod -Uri 'https://gitee.com/api/v5/repos/morilong/claude-code-api-config-manager/releases?page=1&per_page=1&direction=desc' -ErrorAction Stop } catch { $null }; if ($r -and $r[0].tag_name) { $r[0].tag_name -replace '^v', '' } else { $null }"`) do set VERSION=%%i
+REM Get latest version
+echo [INFO] Fetching latest version...
+
+set VERSION=
+for /f "delims=" %%i in ('powershell -Command "$ProgressPreference = 'SilentlyContinue'; try { (Invoke-RestMethod -Uri 'https://gitee.com/api/v5/repos/morilong/claude-code-api-config-manager/releases?page=1^&per_page=1^&direction=desc')[0].tag_name -replace '^v', '' } catch { '' }"') do set VERSION=%%i
+
 if "%VERSION%"=="" (
-    echo [ERROR] 无法从 Gitee API 获取版本信息
+    echo [ERROR] Failed to get version from Gitee API
     echo.
-    echo 请浏览器打开：
+    echo Please visit:
     echo https://gitee.com/morilong/claude-code-api-config-manager/releases
-    echo 手动下载最新版安装！
     echo.
-    cd /d "%TEMP%"
-    rmdir /s /q "%TMP_DIR%" 2>nul
+    endlocal
     exit /b 1
 )
-echo [INFO] 最新版本: v%VERSION%
+echo [INFO] Latest version: v%VERSION%
 
-REM 创建临时目录
-set TMP_DIR=%TEMP%\ccm-install-%RANDOM%
+REM Create temp directory
+set "TMP_DIR=%TEMP%\ccm-install-%RANDOM%"
 mkdir "%TMP_DIR%" 2>nul
 cd /d "%TMP_DIR%"
 
-REM 构建下载 URL (Gitee)
-set FILENAME=ccm-%PLATFORM%.zip
-set DOWNLOAD_URL=https://gitee.com/morilong/claude-code-api-config-manager/releases/download/v%VERSION%/%FILENAME%
+REM Build download URL
+set "FILENAME=ccm-%PLATFORM%.zip"
+set "DOWNLOAD_URL=https://gitee.com/morilong/claude-code-api-config-manager/releases/download/v%VERSION%/%FILENAME%"
 
-echo [INFO] 正在下载: %DOWNLOAD_URL%
+echo [INFO] Downloading: %DOWNLOAD_URL%
 
-REM 下载文件（使用 PowerShell）
-powershell -Command "Invoke-WebRequest -Uri '%DOWNLOAD_URL%' -OutFile '%FILENAME%' -UseBasicParsing"
+REM Download file using PowerShell
+powershell -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri '!DOWNLOAD_URL!' -OutFile '!FILENAME!' -UseBasicParsing"
 
 if not exist "%FILENAME%" (
-    echo [ERROR] 下载失败，请检查网络连接或版本号
+    echo [ERROR] Download failed
     cd /d "%TEMP%"
     rmdir /s /q "%TMP_DIR%" 2>nul
+    endlocal
     exit /b 1
 )
 
-echo [SUCCESS] 下载完成
+echo [SUCCESS] Download complete
 
-REM 解压文件
-echo [INFO] 正在解压...
-powershell -Command "Expand-Archive -Path '%FILENAME%' -DestinationPath '.' -Force"
+REM Extract file
+echo [INFO] Extracting...
+powershell -Command "Expand-Archive -Path '!FILENAME!' -DestinationPath '.' -Force"
 
 if not exist "ccm.exe" (
-    echo [ERROR] 解压后未找到 ccm.exe 可执行文件
+    echo [ERROR] ccm.exe not found after extraction
     cd /d "%TEMP%"
     rmdir /s /q "%TMP_DIR%" 2>nul
+    endlocal
     exit /b 1
 )
 
-echo [SUCCESS] 解压完成
+echo [SUCCESS] Extraction complete
 
-REM 执行安装
-echo [INFO] 正在执行安装...
+REM Run installation
+echo [INFO] Running installation...
 ccm.exe install -y
 
-if %ERRORLEVEL% EQU 0 (
-    REM 安装完成
-    echo.
-) else (
-    echo [ERROR] 安装失败
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Installation failed
     cd /d "%TEMP%"
     rmdir /s /q "%TMP_DIR%" 2>nul
+    endlocal
     exit /b 1
 )
 
-REM 清理临时文件
+REM Cleanup
 cd /d "%TEMP%"
 rmdir /s /q "%TMP_DIR%" 2>nul
 
-echo [SUCCESS] ccm 已成功安装。
+echo [SUCCESS] ccm installed successfully.
 echo.
 
 endlocal
