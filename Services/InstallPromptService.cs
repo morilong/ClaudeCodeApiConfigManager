@@ -22,7 +22,7 @@ public static class InstallPromptService
     /// <summary>
     /// 获取可用的安装选项列表
     /// </summary>
-    public static List<InstallOption> GetInstallOptions(InstallPlan defaultPlan)
+    public static List<InstallOption> GetInstallOptions(InstallPlan defaultPlan, bool isForce)
     {
         var options = new List<InstallOption>();
 
@@ -33,15 +33,18 @@ public static class InstallPromptService
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 Constants.Install.WinCcmDir);
 
-            // 当前目录选项（如果干净）
-            if (InstallService.IsDirectoryClean(currentDir))
+            if (!isForce)
             {
-                options.Add(new InstallOption
+                // 当前目录选项（如果干净）
+                if (InstallService.IsDirectoryClean(currentDir))
                 {
-                    Name = "当前目录",
-                    Description = $"将 {currentDir} 添加到 PATH",
-                    Directory = currentDir
-                });
+                    options.Add(new InstallOption
+                    {
+                        Name = "当前目录",
+                        Description = $"将 {currentDir} 添加到 PATH",
+                        Directory = currentDir
+                    });
+                }
             }
 
             // 用户目录 .ccm 选项
@@ -99,7 +102,7 @@ public static class InstallPromptService
     /// </summary>
     public static InstallOption? PromptInstallDirectory(InstallPlan defaultPlan, bool isForce)
     {
-        var options = GetInstallOptions(defaultPlan);
+        var options = GetInstallOptions(defaultPlan, isForce);
 
         // 找到默认选中的选项（与检测到的安装计划匹配的）
         int defaultIndex = 0;
@@ -188,9 +191,12 @@ public static class InstallPromptService
     /// </summary>
     public static bool ConfirmInstallPlan(InstallOption selectedOption, InstallPlan originalPlan, bool isForce)
     {
-        AnsiConsole.WriteLine();
-        AnsiConsole.Write(new Rule("[blue]安装计划[/]").RuleStyle("grey"));
-        AnsiConsole.WriteLine();
+        if (!isForce)
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.Write(new Rule("[blue]安装计划[/]").RuleStyle("grey"));
+            AnsiConsole.WriteLine();
+        }
 
         var table = new Table()
             .Border(TableBorder.Rounded)

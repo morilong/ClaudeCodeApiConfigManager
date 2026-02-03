@@ -146,8 +146,6 @@ public static class InitService
     {
         Output.WriteLine();
         Output.WriteLine(Constants.Messages.WelcomeMessage);
-        Output.WriteLine();
-        Output.WriteLine(Constants.Messages.FirstRunDetected);
     }
 
     /// <summary>
