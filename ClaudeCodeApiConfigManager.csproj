@@ -9,6 +9,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
+	<!-- 版本号 -->
+	<Version>1.0.2</Version>
+
     <!-- 可执行文件名称 -->
     <AssemblyName>ccm</AssemblyName>
 

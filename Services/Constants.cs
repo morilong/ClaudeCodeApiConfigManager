@@ -128,7 +128,7 @@ public static class Constants
               "customParams": {}
             },
             {
-              "name": "mm",
+              "name": "minimax",
               "authToken": "",
               "baseUrl": "https://api.minimaxi.com/anthropic",
               "model": "MiniMax-M2.1",
