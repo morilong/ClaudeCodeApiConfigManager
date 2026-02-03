@@ -84,7 +84,7 @@ public static class InitService
                 // 执行全局安装（如果 PATH 不存在）
                 if (!isInstalled)
                 {
-                    var installSuccess = InstallService.Install();
+                    var installSuccess = InstallService.Install(isForce);
                     if (!installSuccess)
                     {
                         Output.Error("安装失败。");

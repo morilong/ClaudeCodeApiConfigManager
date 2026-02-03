@@ -89,11 +89,11 @@ public static class InstallService
     /// <summary>
     /// 执行全局安装
     /// </summary>
-    public static bool Install()
+    public static bool Install(bool isForce)
     {
         try
         {
-            return Platform.IsWindows ? WindowsInstall() : UnixInstall();
+            return Platform.IsWindows ? WindowsInstall(isForce) : UnixInstall(isForce);
         }
         catch (Exception ex)
         {
@@ -209,7 +209,7 @@ public static class InstallService
     /// <summary>
     /// Windows 安装主流程
     /// </summary>
-    private static bool WindowsInstall()
+    private static bool WindowsInstall(bool isForce)
     {
         var plan = DetectInstallPlan();
         var baseDir = AppContext.BaseDirectory;
@@ -236,13 +236,13 @@ public static class InstallService
 
             if (File.Exists(exeDest))
             {
-                if (!Output.Confirm($"检测到 {exeDest} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
+                if (isForce || Output.Confirm($"检测到 {exeDest} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
                 {
-                    Output.WriteLine("跳过文件复制。");
+                    File.Copy(exeSource, exeDest, true);
                 }
                 else
                 {
-                    File.Copy(exeSource, exeDest, true);
+                    Output.WriteLine("跳过文件复制。");
                 }
             }
             else
@@ -488,7 +488,7 @@ public static class InstallService
     /// <summary>
     /// Unix 安装主流程
     /// </summary>
-    private static bool UnixInstall()
+    private static bool UnixInstall(bool isForce)
     {
         var plan = DetectInstallPlan();
         var targetDir = plan.InstallDirectory;
@@ -519,7 +519,7 @@ public static class InstallService
         // 检查符号链接是否已存在
         if (File.Exists(linkPath) || Directory.Exists(linkPath))
         {
-            if (!Output.Confirm($"检测到 {linkPath} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
+            if (!isForce && !Output.Confirm($"检测到 {linkPath} {Constants.Messages.FileAlreadyExists}。是否覆盖?", false))
             {
                 Output.WriteLine("跳过符号链接创建。");
                 return true;
