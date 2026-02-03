@@ -123,10 +123,11 @@ download_and_extract() {
         exit 1
     fi
 
-    # 添加执行权限
-    chmod +x ccm
+    # 将可执行文件重命名为版本号（多版本管理）
+    mv ccm "$VERSION"
+    chmod +x "$VERSION"
 
-    print_success "解压完成"
+    print_success "解压完成 (版本: $VERSION)"
 }
 
 # 执行安装
@@ -162,7 +163,7 @@ main() {
     download_and_extract
     run_install
 
-    print_success "ccm 已成功安装！"
+    print_success "ccm 已成功安装。"
     echo ""
 }
 
