@@ -151,6 +151,7 @@ public static class CommandBuilder
         {
             nameArgument
         };
+        command.Aliases.Add("rm");
         command.Aliases.Add("del");
 
         command.SetAction(parseResult =>
