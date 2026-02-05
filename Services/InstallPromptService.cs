@@ -22,7 +22,7 @@ public static class InstallPromptService
     /// <summary>
     /// 获取可用的安装选项列表
     /// </summary>
-    public static List<InstallOption> GetInstallOptions(InstallPlan defaultPlan, bool isForce)
+    public static List<InstallOption> GetInstallOptions(bool isForce)
     {
         var options = new List<InstallOption>();
 
@@ -102,7 +102,7 @@ public static class InstallPromptService
     /// </summary>
     public static InstallOption? PromptInstallDirectory(InstallPlan defaultPlan, bool isForce)
     {
-        var options = GetInstallOptions(defaultPlan, isForce);
+        var options = GetInstallOptions(isForce);
 
         // 找到默认选中的选项（与检测到的安装计划匹配的）
         int defaultIndex = 0;
@@ -122,7 +122,7 @@ public static class InstallPromptService
 
         if (isForce)
         {
-            return options[0];
+            return options[defaultIndex];
         }
 
         // 使用 Spectre.Console 创建选择提示
