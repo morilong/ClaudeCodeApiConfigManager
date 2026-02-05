@@ -406,15 +406,12 @@ public static class InstallService
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
                 });
-                if (Directory.Exists(installDir) &&
-                    !Directory.EnumerateFileSystemEntries(installDir).Any())
-                {
-                    Output.Success($"✓ {Constants.Messages.InstallDirDeleted}：{installDir}");
-                }
-                else
-                {
-                    Output.Success($"✓ 已删除：{exeFilePath}");
-                }
+
+                Output.Success($"✓ 已删除：{exeFilePath}");
+                Output.WriteLine();
+                Output.WriteLine(Constants.Messages.UninstallComplete);
+
+                Environment.Exit(0);
             }
         }
         catch (Exception ex)
@@ -422,9 +419,6 @@ public static class InstallService
             Output.Error($"删除 {Constants.Install.WinExeName} 失败：");
             Output.Error(ex.ToString());
         }
-
-        Output.WriteLine();
-        Output.WriteLine(Constants.Messages.UninstallComplete);
     }
 
     #endregion
