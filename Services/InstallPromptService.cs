@@ -28,13 +28,20 @@ public static class InstallPromptService
 
         if (Platform.IsWindows)
         {
-            var currentDir = Directory.GetCurrentDirectory().TrimEnd('\\', '/');
             var ccmDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 Constants.Install.WinCcmDir);
+            // 用户目录 .ccm 选项
+            options.Add(new InstallOption
+            {
+                Name = "用户目录",
+                Description = $"复制到 {ccmDir} 并添加到 PATH",
+                Directory = ccmDir
+            });
 
             if (!isForce)
             {
+                var currentDir = Directory.GetCurrentDirectory().TrimEnd('\\', '/');
                 // 当前目录选项（如果干净）
                 if (InstallService.IsDirectoryClean(currentDir))
                 {
@@ -45,15 +52,25 @@ public static class InstallPromptService
                         Directory = currentDir
                     });
                 }
-            }
 
-            // 用户目录 .ccm 选项
-            options.Add(new InstallOption
-            {
-                Name = "用户目录",
-                Description = $"复制到 {ccmDir} 并添加到 PATH",
-                Directory = ccmDir
-            });
+                var suffix = Environment.Is64BitOperatingSystem ? "" : " (x86)";
+
+                var dDir = Path.Combine("D:", $"Program Files{suffix}", "ccm");
+                options.Add(new InstallOption
+                {
+                    Name = "安装到 D 盘",
+                    Description = $"将 {dDir} 添加到 PATH",
+                    Directory = dDir
+                });
+
+                var cDir = Path.Combine("C:", $"Program Files{suffix}", "ccm");
+                options.Add(new InstallOption
+                {
+                    Name = "安装到 C 盘",
+                    Description = $"将 {cDir} 添加到 PATH",
+                    Directory = cDir
+                });
+            }
 
             // 自定义路径选项
             options.Add(new InstallOption

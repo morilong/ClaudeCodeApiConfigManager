@@ -171,12 +171,17 @@ public static class InstallService
     }
 
     /// <summary>
-    /// 检查目录是否只包含 ccm.exe 和其他少量非 .exe 文件
+    /// 检查目录是否 非C盘 且 只包含 ccm.exe 和其他少量非 .exe 文件
     /// </summary>
     public static bool IsDirectoryClean(string directory)
     {
         try
         {
+            if (directory.StartsWith("C:", StringComparison.OrdinalIgnoreCase))
+            {
+                return false; // C 盘
+            }
+
             var fileOrDirNames = Directory.EnumerateFileSystemEntries(directory)
                 .Select(path => Path.GetFileName(path))
                 .Where(fileName =>
