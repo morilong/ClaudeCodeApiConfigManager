@@ -60,6 +60,7 @@ public static class Constants
         public const string BashProfile = ".bash_profile";
         public const string Zshrc = ".zshrc";
         public const string FishConfig = "config.fish";
+        public const string UninstallBatName = "uninstall.bat";
     }
 
     /// <summary>
@@ -160,4 +161,33 @@ public static class Constants
         }
         """;
     }
+
+    public const string UninstallScript = """
+@echo off
+chcp 65001 >nul
+dir /b "%~dp0*" 2>nul | find /v "uninstall.bat" | find /v "ccm.exe" | findstr . >nul
+if %errorlevel% neq 0 (
+    del "%~dp0ccm.exe" 2>nul
+    echo 卸载完成！程序文件和目录已全部删除。
+    > "%temp%\delself.bat" (
+        echo @echo off
+        echo timeout /t 1 /nobreak ^>nul
+        echo rmdir /s /q "%~dp0" 2^>nul
+        echo del "%%0" 2^>nul
+    )
+    start "" /min cmd /c "%temp%\delself.bat"
+) else (
+    del "%~dp0ccm.exe" 2>nul
+    echo 卸载完成！程序文件已删除。
+    > "%temp%\delself.bat" (
+        echo @echo off
+        echo timeout /t 1 /nobreak ^>nul
+        echo del /f "%~f0" 2^>nul
+        echo del "%%0" 2^>nul
+    )
+    start "" /min cmd /c "%temp%\delself.bat"
+)
+exit
+""";
+
 }

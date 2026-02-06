@@ -217,50 +217,38 @@ public static class InstallService
     private static bool WindowsInstall(bool isForce)
     {
         var plan = DetectInstallPlan();
+        var installDirectory = plan.InstallDirectory;
         var baseDir = AppContext.BaseDirectory;
-        var isCDriveInstall = plan.InstallDirectory.Contains(Constants.Install.WinCcmDir);
 
-        // 如果需要复制文件
-        if (isCDriveInstall || !IsDirectoryClean(baseDir))
+        // 创建目标目录
+        if (!Directory.Exists(installDirectory))
         {
-            // 创建目标目录
-            if (!Directory.Exists(plan.InstallDirectory))
-            {
-                Directory.CreateDirectory(plan.InstallDirectory);
-            }
+            Directory.CreateDirectory(installDirectory);
+        }
 
-            // 查找可执行文件（可能是 .exe 或 .dll）
-            var exeSource = FindExecutableFile(baseDir);
-            if (exeSource == null)
-            {
-                Output.Error("找不到可执行文件。");
-                return false;
-            }
+        // 查找可执行文件（可能是 .exe 或 .dll）
+        var exeSource = FindExecutableFile(baseDir);
+        if (exeSource == null)
+        {
+            Output.Error("找不到可执行文件。");
+            return false;
+        }
 
-            var exeDest = Path.Combine(plan.InstallDirectory, Constants.Install.WinExeName);
+        var exeDest = Path.Combine(installDirectory, Constants.Install.WinExeName);
 
-            if (File.Exists(exeDest))
-            {
-                if (isForce || Output.Confirm($"检测到 {exeDest} 已存在。是否覆盖？", true))
-                {
-                    File.Copy(exeSource, exeDest, true);
-                }
-                else
-                {
-                    Output.WriteLine("跳过文件复制。");
-                }
-            }
-            else
-            {
-                File.Copy(exeSource, exeDest);
-            }
+        if (!exeDest.Equals(exeSource, StringComparison.OrdinalIgnoreCase))
+        {
+            File.Copy(exeSource, exeDest, true);
         }
 
         // 添加到环境变量 PATH
-        if (!Platform.IsDirectoryInPath(plan.InstallDirectory))
+        if (!Platform.IsDirectoryInPath(installDirectory))
         {
-            AddToUserPath(plan.InstallDirectory);
+            AddToUserPath(installDirectory);
         }
+
+        var uninstallScriptPath = Path.Combine(installDirectory, Constants.Files.UninstallBatName);
+        File.WriteAllText(uninstallScriptPath, Constants.UninstallScript);
 
         return true;
     }
@@ -398,30 +386,31 @@ public static class InstallService
             }
         }
 
-        // 启动独立 cmd 进程执行删除复制的.exe文件 + 删除空的安装目录
+        // 删除复制的.exe文件 + 删除空的安装目录
         try
         {
             if (existExeFile)
             {
-                Process.Start(new ProcessStartInfo
+                // 因删除自身代码报毒，改为提示用户自行删除
+
+                /*Process.Start(new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
                     Arguments = $"/C ping 127.0.0.1 -n 2 >nul & del \"{exeFilePath}\" & rd \"{installDir}\" 2>nul",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     WindowStyle = ProcessWindowStyle.Hidden
-                });
+                });*/
 
-                Output.Success($"✓ 已删除：{exeFilePath}");
                 Output.WriteLine();
-                Output.WriteLine(Constants.Messages.UninstallComplete);
-
-                Environment.Exit(0);
+                Output.WriteLine($"请执行以下命令删除程序文件和安装目录：");
+                Output.Warn(Path.Combine(installDir, Constants.Files.UninstallBatName));
+                Output.WriteLine();
             }
         }
         catch (Exception ex)
         {
-            Output.Error($"删除 {Constants.Install.WinExeName} 失败：");
+            Output.Error($"执行 {Constants.Files.UninstallBatName} 异常：");
             Output.Error(ex.ToString());
         }
     }
