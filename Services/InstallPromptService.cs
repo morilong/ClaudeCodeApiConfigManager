@@ -55,21 +55,27 @@ public static class InstallPromptService
 
                 var suffix = Environment.Is64BitOperatingSystem ? "" : " (x86)";
 
-                var dDir = Path.Combine("D:", $"Program Files{suffix}", "ccm");
-                options.Add(new InstallOption
+                if (Directory.Exists("D:"))
                 {
-                    Name = "安装到 D 盘",
-                    Description = $"将 {dDir} 添加到 PATH",
-                    Directory = dDir
-                });
+                    var dDir = Path.Combine("D:", $"Program Files{suffix}", "ccm");
+                    options.Add(new InstallOption
+                    {
+                        Name = "安装到 D 盘",
+                        Description = $"将 {dDir} 添加到 PATH",
+                        Directory = dDir
+                    });
+                }
 
-                var cDir = Path.Combine("C:", $"Program Files{suffix}", "ccm");
-                options.Add(new InstallOption
+                if (Directory.Exists("C:"))
                 {
-                    Name = "安装到 C 盘",
-                    Description = $"将 {cDir} 添加到 PATH",
-                    Directory = cDir
-                });
+                    var cDir = Path.Combine("C:", $"Program Files{suffix}", "ccm");
+                    options.Add(new InstallOption
+                    {
+                        Name = "安装到 C 盘",
+                        Description = $"将 {cDir} 添加到 PATH",
+                        Directory = cDir
+                    });
+                }
             }
 
             // 自定义路径选项
