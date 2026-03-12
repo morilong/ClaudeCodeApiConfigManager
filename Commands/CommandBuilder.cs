@@ -91,14 +91,29 @@ public static class CommandBuilder
             Description = "配置名称"
         };
 
+        var tempOption = new Option<bool>("--temp")
+        {
+            Aliases = { "-t" },
+            Description = "临时生效（仅当前终端，默认）"
+        };
+
+        var persistOption = new Option<bool>("--persist")
+        {
+            Aliases = { "-p" },
+            Description = "永久生效（当前终端 + 新终端）"
+        };
+
         var command = new Command("use", "切换到指定配置")
         {
-            nameArgument
+            nameArgument,
+            tempOption,
+            persistOption
         };
 
         command.SetAction(parseResult =>
         {
             var name = parseResult.GetValue(nameArgument)!;
+            var persist = parseResult.GetValue(persistOption);
             var config = ConfigService.GetConfig(name);
             if (config == null)
             {
@@ -108,7 +123,7 @@ public static class CommandBuilder
 
             try
             {
-                CommandHelper.SetEnvironmentVariables(config);
+                CommandHelper.UseConfig(config, persist);
                 ConfigService.SetActiveConfig(name);
             }
             catch (Exception ex)

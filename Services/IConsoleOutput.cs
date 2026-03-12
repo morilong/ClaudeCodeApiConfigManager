@@ -88,7 +88,11 @@ public class ConsoleOutput : IConsoleOutput
     public virtual void Markup(string markup) => AnsiConsole.Markup(markup);
     public virtual void MarkupLine(string markup) => AnsiConsole.MarkupLine(markup);
     public virtual void Success(string message) => AnsiConsole.MarkupLine($"[green]{Spectre.Console.Markup.Escape(message)}[/]");
-    public virtual void Error(string message) => AnsiConsole.MarkupLine($"[red]{Spectre.Console.Markup.Escape(message)}[/]");
+    public virtual void Error(string message)
+    {
+        // 错误消息输出到 stderr，避免被 Invoke-Expression 执行
+        Console.Error.WriteLine($"\x1b[31m{message}\x1b[0m");
+    }
     public virtual void Warn(string message) => AnsiConsole.MarkupLine($"[yellow]{Spectre.Console.Markup.Escape(message)}[/]");
     public virtual void Info(string message) => AnsiConsole.MarkupLine($"[blue]{Spectre.Console.Markup.Escape(message)}[/]");
     public virtual void WriteTable(Table table) => AnsiConsole.Write(table);

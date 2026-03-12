@@ -105,7 +105,98 @@ public static class CommandHelper
     }
 
     /// <summary>
-    /// 设置环境变量
+    /// 使用配置（核心方法）
+    /// </summary>
+    /// <param name="config">API 配置</param>
+    /// <param name="persist">是否永久生效</param>
+    public static void UseConfig(ApiConfig config, bool persist = false)
+    {
+        var variables = BuildEnvironmentVariables(config);
+        var shellType = ShellDetector.Detect();
+
+        if (persist)
+        {
+            // 永久模式：设置永久环境变量 + 输出临时命令
+            if (Platform.IsWindows)
+            {
+                WindowsEnvironmentManager.SetEnvironmentVariables(variables);
+            }
+            else if (Platform.IsUnix)
+            {
+                UnixEnvironmentManager.SetEnvironmentVariables(variables);
+            }
+
+            // 同时输出临时命令，确保当前终端立即生效
+            OutputTempEnvCommands(shellType, variables, config.Name, true);
+        }
+        else
+        {
+            // 临时模式：只输出临时命令
+            OutputTempEnvCommands(shellType, variables, config.Name, false);
+        }
+    }
+
+    /// <summary>
+    /// 输出临时环境变量命令
+    /// </summary>
+    private static void OutputTempEnvCommands(ShellType shellType, Dictionary<string, string> variables, string configName, bool isPersist)
+    {
+        if (shellType == ShellType.Cmd)
+        {
+            // CMD 特殊处理：输出可复制粘贴的命令
+            OutputCmdInstructions(variables, configName, isPersist);
+        }
+        else
+        {
+            // 成功提示输出到 stderr（避免被 Invoke-Expression 执行）
+            if (isPersist)
+            {
+                Console.Error.WriteLine($"\x1b[32m✓ 已切换到配置: {configName}\x1b[0m");
+                Console.Error.WriteLine("\x1b[32m✓ 此环境变量已在当前终端生效\x1b[0m");
+            }
+            else
+            {
+                Console.Error.WriteLine($"\x1b[32m✓ 已切换到配置: {configName}\x1b[0m");
+                Console.Error.WriteLine("此环境变量仅在当前终端生效。");
+            }
+
+            // 其他 Shell：输出 eval 格式的命令到 stdout
+            var commands = TempEnvExporter.Export(shellType, variables);
+            Console.WriteLine(commands);
+        }
+    }
+
+    /// <summary>
+    /// 输出 CMD 用户提示
+    /// </summary>
+    private static void OutputCmdInstructions(Dictionary<string, string> variables, string configName, bool isPersist)
+    {
+        var output = new ConsoleOutput();
+
+        if (isPersist)
+        {
+            output.Success($"✓ 已切换到配置: {configName}");
+            output.WriteLine();
+            output.WriteLine("请复制以下命令使当前终端立即生效:");
+        }
+        else
+        {
+            output.WriteLine("请复制以下命令执行使环境变量立即生效:");
+        }
+
+        output.WriteLine();
+
+        // 输出单行命令
+        var cmdParts = variables.Select(kv => $"set {kv.Key}={kv.Value}");
+        var singleLineCmd = string.Join(" && ", cmdParts);
+        output.Success(singleLineCmd);
+
+        output.WriteLine();
+        output.WriteLine("提示: 使用 PowerShell 或 Git Bash 可自动生效");
+    }
+
+    /// <summary>
+    /// 设置环境变量（永久模式，保留向后兼容）
     /// </summary>
     public static void SetEnvironmentVariables(ApiConfig config)
     {

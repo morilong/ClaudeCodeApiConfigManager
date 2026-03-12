@@ -250,6 +250,9 @@ public static class InstallService
         var uninstallScriptPath = Path.Combine(installDirectory, Constants.Files.UninstallBatName);
         File.WriteAllText(uninstallScriptPath, Constants.UninstallScript);
 
+        // 注入 Shell 函数
+        InjectShellFunctions();
+
         return true;
     }
 
@@ -412,6 +415,29 @@ public static class InstallService
         {
             Output.Error($"执行 {Constants.Files.UninstallBatName} 异常：");
             Output.Error(ex.ToString());
+        }
+    }
+
+    #endregion
+
+    #region Shell 函数注入
+
+    /// <summary>
+    /// 注入 Shell 函数到所有可用的 Shell
+    /// </summary>
+    private static void InjectShellFunctions()
+    {
+        var shells = ShellFunctionInjector.DetectAvailableShells();
+        foreach (var shell in shells)
+        {
+            try
+            {
+                ShellFunctionInjector.Inject(shell);
+            }
+            catch (Exception ex)
+            {
+                Output.Warn($"注入 {shell} 函数失败: {ex.Message}");
+            }
         }
     }
 
