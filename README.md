@@ -111,7 +111,11 @@ ccm st ds sk-xxx
 
 ### 切换配置
 ```bash
+# 临时模式（仅在当前终端生效）
 ccm use ds
+
+# 永久模式（当前终端 + 新终端）
+ccm use ds -p
 ```
 
 ### 添加新配置
