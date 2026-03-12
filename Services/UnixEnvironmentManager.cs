@@ -31,7 +31,8 @@ public static class UnixEnvironmentManager
                 break;
         }
 
-        PrintReloadInstructions(shellType);
+        Console.Error.WriteLine();
+        Console.Error.WriteLine(Constants.Messages.UnixEnvUpdate);
     }
 
     /// <summary>
@@ -190,34 +191,4 @@ public static class UnixEnvironmentManager
         }
     }
 
-    /// <summary>
-    /// 打印重新加载环境的说明
-    /// </summary>
-    private static void PrintReloadInstructions(ShellType shellType)
-    {
-        Output.WriteLine();
-        Output.WriteLine(Constants.Messages.UnixEnvUpdate);
-        Output.WriteLine();
-        Output.WriteLine(Constants.Messages.UnixRunCmdEffective);
-
-        string sourceCommand;
-        if (shellType == ShellType.Fish)
-        {
-            sourceCommand = "source ~/.config/fish/config.fish";
-        }
-        else if (shellType == ShellType.Zsh)
-        {
-            sourceCommand = $"source ~/{Constants.Files.Zshrc}";
-        }
-        else
-        {
-            var bashrc = Path.Combine(HomeDir, Constants.Files.Bashrc);
-            var configFile = File.Exists(bashrc) ? $"~/{Constants.Files.Bashrc}" : $"~/{Constants.Files.BashProfile}";
-            sourceCommand = $"source {configFile}";
-        }
-
-        Output.Success(sourceCommand);
-        Output.WriteLine();
-        Output.WriteLine(Constants.Messages.UnixOpenNewWindowEffective);
-    }
 }

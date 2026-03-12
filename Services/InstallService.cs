@@ -93,7 +93,13 @@ public static class InstallService
     {
         try
         {
-            return Platform.IsWindows ? WindowsInstall(isForce) : UnixInstall();
+            var success = Platform.IsWindows ? WindowsInstall(isForce) : UnixInstall();
+            if (success)
+            {
+                // 注入 Shell 函数
+                InjectShellFunctions();
+            }
+            return success;
         }
         catch (Exception ex)
         {
@@ -110,6 +116,9 @@ public static class InstallService
     {
         try
         {
+            // 移除所有被输入到 Shell 的函数
+            RemoveShellFunctions();
+
             if (Platform.IsWindows)
             {
                 WindowsUninstall(removeConfig);
@@ -249,9 +258,6 @@ public static class InstallService
 
         var uninstallScriptPath = Path.Combine(installDirectory, Constants.Files.UninstallBatName);
         File.WriteAllText(uninstallScriptPath, Constants.UninstallScript);
-
-        // 注入 Shell 函数
-        InjectShellFunctions();
 
         return true;
     }
@@ -420,7 +426,7 @@ public static class InstallService
 
     #endregion
 
-    #region Shell 函数注入
+    #region Shell 函数注入/移除
 
     /// <summary>
     /// 注入 Shell 函数到所有可用的 Shell
@@ -436,7 +442,26 @@ public static class InstallService
             }
             catch (Exception ex)
             {
-                Output.Warn($"注入 {shell} 函数失败: {ex.Message}");
+                Output.Warn($"注入 ccm 函数到 {shell} 失败: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 移除所有被输入到 Shell 的函数
+    /// </summary>
+    private static void RemoveShellFunctions()
+    {
+        var shells = ShellFunctionInjector.DetectAvailableShells();
+        foreach (var shell in shells)
+        {
+            try
+            {
+                ShellFunctionInjector.Remove(shell);
+            }
+            catch (Exception ex)
+            {
+                Output.Warn($"从 {shell} 移除 ccm 函数失败: {ex.Message}");
             }
         }
     }

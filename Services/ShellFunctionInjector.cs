@@ -36,29 +36,29 @@ function ccm {
     /// <summary>
     /// Bash/Zsh 函数模板
     /// </summary>
-    private const string BashFunctionTemplate = """
+    private static string BashFunctionTemplate = """
 # <ccm-init>
 ccm() {
     local cmd="$1"
     if [[ "$cmd" == "use" ]]; then
         if [[ "$*" == *"--help"* || "$*" == *"-h"* ]]; then
-            command ccm.exe "$@"
+            command ccm "$@"
         elif [[ "$*" == *"--persist"* || "$*" == *"-p"* ]]; then
-            eval "$(command ccm.exe "$@")"
+            eval "$(command ccm "$@")"
         else
-            eval "$(command ccm.exe "$@" --temp)"
+            eval "$(command ccm "$@" --temp)"
         fi
     else
-        command ccm.exe "$@"
+        command ccm "$@"
     fi
 }
 # </ccm-init>
-""";
+""".Replace("\r\n", "\n");
 
     /// <summary>
     /// Fish 函数模板
     /// </summary>
-    private const string FishFunctionTemplate = """
+    private static string FishFunctionTemplate = """
 # <ccm-init>
 function ccm
     set -l cmd $argv[1]
@@ -75,7 +75,7 @@ function ccm
     end
 end
 # </ccm-init>
-""";
+""".Replace("\r\n", "\n");
 
     #endregion
 
@@ -201,6 +201,7 @@ end
             var content = File.ReadAllText(configPath);
             if (content.Contains("<ccm-init>"))
             {
+                Output.WriteLine();
                 Output.WriteLine($"{configName} 已包含 ccm 函数，跳过注入。");
                 return;
             }
@@ -211,6 +212,7 @@ end
         writer.WriteLine();
         writer.WriteLine(functionContent);
 
+        Output.WriteLine();
         Output.Success($"已注入 ccm 函数到 {configName}");
     }
 
@@ -364,7 +366,6 @@ end
     }
 
     #endregion
-
 
     #region 检测方法
 

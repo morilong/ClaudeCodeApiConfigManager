@@ -149,6 +149,7 @@ public static class CommandHelper
         else
         {
             // 成功提示输出到 stderr（避免被 Invoke-Expression 执行）
+            Console.Error.WriteLine();
             if (isPersist)
             {
                 Console.Error.WriteLine($"\x1b[32m✓ 已切换到配置: {configName}\x1b[0m");
@@ -159,6 +160,7 @@ public static class CommandHelper
                 Console.Error.WriteLine($"\x1b[32m✓ 已切换到配置: {configName}\x1b[0m");
                 Console.Error.WriteLine("此环境变量仅在当前终端生效。");
             }
+            Console.Error.WriteLine();
 
             // 其他 Shell：输出 eval 格式的命令到 stdout
             var commands = TempEnvExporter.Export(shellType, variables);

@@ -100,9 +100,8 @@ public static class Constants
         public const string ConfigDirDeleted = "配置目录已删除";
 
         // CMD 相关消息
-        public const string CmdCopyPasteHint = "[CMD] 请复制以下命令执行使环境变量立即生效：";
+        public const string CmdCopyPasteHint = "请复制以下命令执行使环境变量立即生效：";
         public const string CmdUsePsOrGitBash = "提示: 使用 PowerShell 或 Git Bash 可自动生效";
-        public const string ShellFunctionInjected = "Shell 函数已注入";
         public const string ShellFunctionRemoved = "Shell 函数已移除";
     }
 
