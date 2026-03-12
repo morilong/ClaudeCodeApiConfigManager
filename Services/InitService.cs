@@ -1,7 +1,3 @@
-using System.Diagnostics;
-using System.Text.Json;
-using ClaudeCodeApiConfigManager.Models;
-
 namespace ClaudeCodeApiConfigManager.Services;
 
 /// <summary>
@@ -27,14 +23,6 @@ public static class InitService
     {
         try
         {
-            var configDir = Platform.GetConfigDirectory();
-            if (Platform.IsWindows &&
-                File.Exists(Path.Combine(configDir, Constants.Files.Settings)) &&
-                Platform.IsDirectoryInPath(configDir))
-            {
-                return ShowInstalled();
-            }
-
             // 获取安装计划
             var installPlan = InstallService.DetectInstallPlan();
 
@@ -43,12 +31,6 @@ public static class InitService
 
             // 检测状态
             var isInstalled = InstallService.IsInstalled();
-
-            // 如果已安装，不需要初始化
-            if (isInstalled)
-            {
-                return ShowInstalled();
-            }
 
             try
             {
@@ -81,15 +63,12 @@ public static class InitService
                     return 0;
                 }
 
-                // 执行全局安装（如果 PATH 不存在）
-                if (!isInstalled)
+                // 执行全局安装
+                var installSuccess = InstallService.Install(isForce);
+                if (!installSuccess)
                 {
-                    var installSuccess = InstallService.Install(isForce);
-                    if (!installSuccess)
-                    {
-                        Output.Error("安装失败。");
-                        return 1;
-                    }
+                    Output.Error("安装失败。");
+                    return 1;
                 }
 
                 // 创建配置文件（如果不存在）
@@ -123,21 +102,6 @@ public static class InitService
             return 1;
         }
     }
-
-#pragma warning disable CA1416 // 仅在 Windows 上支持
-    private static int ShowInstalled()
-    {
-        if (Platform.IsWindows &&
-            Console.Title?.Contains(Constants.Install.WinExeName, StringComparison.OrdinalIgnoreCase) == true)
-        {
-            Output.Warn("ccm 已安装，不支持双击 ccm.exe 使用。");
-            Output.WriteLine("请打开新终端使用 'ccm -h' 查看可用命令。");
-            Console.ReadKey();
-            return 0;
-        }
-        return -1;
-    }
-#pragma warning restore CA1416
 
     /// <summary>
     /// 显示欢迎信息
@@ -193,12 +157,13 @@ public static class InitService
         if (!configExists)
         {
             Output.Success($"✓ {Constants.Messages.ConfigFileCreated}");
+            Output.WriteLine();
         }
         if (!pathExists)
         {
             Output.Success($"✓ {Constants.Messages.GlobalCommandInstalled}");
+            Output.WriteLine();
         }
-        Output.WriteLine();
         Output.WriteLine("下一步:");
         Output.WriteLine("1. 运行 'ccm list' 查看可用配置");
         Output.WriteLine("2. 运行 'ccm setToken <name> <token>' 修改指定配置的 API Token");
