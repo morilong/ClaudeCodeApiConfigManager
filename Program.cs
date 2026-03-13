@@ -32,7 +32,11 @@ class Program
                 {
                     return result;
                 }
-                // 已安装，正常使用
+                // 已安装，显示命令信息
+                if (args.Length == 0)
+                {
+                    args = ["-h"];
+                }
             }
 
             var rootCommand = new RootCommand

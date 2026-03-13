@@ -23,14 +23,18 @@ public static class InitService
     {
         try
         {
+            // 检测状态
+            var isInstalled = InstallService.IsInstalled();
+            if (isInstalled)
+            {
+                return -1;
+            }
+
             // 获取安装计划
             var installPlan = InstallService.DetectInstallPlan();
 
             // 确定配置文件和安装位置
             var settingsPath = Path.Combine(installPlan.ConfigDirectory, Constants.Files.Settings);
-
-            // 检测状态
-            var isInstalled = InstallService.IsInstalled();
 
             try
             {
