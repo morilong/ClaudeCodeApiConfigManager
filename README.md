@@ -109,6 +109,28 @@ ccm st <name> <token>
 ccm st ds sk-xxx
 ```
 
+### 快捷启动 Claude
+
+一键切换配置并启动 Claude Code：
+
+```bash
+# 普通模式
+ccm-claude zhipu
+
+# 跳过权限确认模式
+ccm-claude zhipu -y
+
+# 简写形式
+ccm-c zhipu
+ccm-c zhipu -y
+```
+
+| 命令 | 说明 |
+|-----|------|
+| `ccm-claude <config>` | 切换配置 + 启动 claude |
+| `ccm-claude <config> -y` | 切换配置 + `claude --dangerously-skip-permissions` |
+| `ccm-c` | `ccm-claude` 的简写 |
+
 ### 切换配置
 ```bash
 # 临时模式（仅在当前终端生效）
@@ -163,16 +185,17 @@ ccm v
 
 ## 命令参考
 
-| 命令 | 描述 | 使用示例 |
-|-----|------|---------|
-| `list` / `ls` | 列出所有已保存的配置 | `ccm ls` |
-| `setToken` / `st` | 修改指定配置的 API Token | `ccm st zhipu xxx` |
-| `add` | 添加新的 API 配置 | `ccm add zhipu xxx https://open.bigmodel.cn/api/anthropic glm-4.7` |
-| `use` | 切换到指定配置（设置环境变量） | `ccm use zhipu` |
-| `current` / `c` | 查看当前使用的配置详情 | `ccm c` |
-| `remove` / `rm` / `del` | 删除指定配置 | `ccm rm test1` |
-| `uninstall` | 卸载 ccm 软件本身 | `ccm uninstall` |
-| `v` | 查看版本信息 | `ccm v` |
+| 命令 | 别名 | 描述 | 使用示例 |
+|-----|------|------|---------|
+| `list` | `ls` | 列出所有已保存的配置 | `ccm ls` |
+| `setToken` | `st` | 修改指定配置的 API Token | `ccm st zhipu xxx` |
+| `add` |  | 添加新的 API 配置 | `ccm add zhipu xxx https://open.bigmodel.cn/api/anthropic glm-4.7` |
+| `use` |  | 切换到指定配置（设置环境变量） | `ccm use zhipu` |
+| `current` | `c` | 查看当前使用的配置详情 | `ccm c` |
+| `ccm-claude` | `ccm-c` | 一键切换配置并启动 Claude | `ccm-c zhipu` / `ccm-c zhipu -y` |
+| `remove` | `rm` / `del` | 删除指定配置 | `ccm rm test1` |
+| `uninstall` |  | 卸载 ccm 软件本身 | `ccm uninstall` |
+| `v` |  | 查看版本信息 | `ccm v` |
 
 ---
 

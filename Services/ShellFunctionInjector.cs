@@ -30,6 +30,36 @@ function ccm {
         & ccm.exe $args
     }
 }
+
+function ccm-claude {
+    $skipPerms = $false
+    $configName = $null
+    $claudeArgs = @()
+
+    foreach ($arg in $args) {
+        if ($arg -eq "-y") {
+            $skipPerms = $true
+        } elseif ($null -eq $configName) {
+            $configName = $arg
+        } else {
+            $claudeArgs += $arg
+        }
+    }
+
+    if ($null -eq $configName) {
+        Write-Host "Usage: ccm-claude <config-name> [-y] [claude-args...]" -ForegroundColor Red
+        return
+    }
+
+    & ccm.exe use $configName --temp | Invoke-Expression
+    if ($skipPerms) {
+        & claude --dangerously-skip-permissions @claudeArgs
+    } else {
+        & claude @claudeArgs
+    }
+}
+
+Set-Alias -Name ccm-c -Value ccm-claude
 # </ccm-init>
 """;
 
@@ -52,6 +82,39 @@ ccm() {
         command ccm "$@"
     fi
 }
+
+ccm-claude() {
+    local skip_perms=false
+    local config_name=""
+    local claude_args=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -y) skip_perms=true; shift ;;
+            *)
+                if [[ -z "$config_name" ]]; then
+                    config_name="$1"
+                else
+                    claude_args+=("$1")
+                fi
+                shift ;;
+        esac
+    done
+
+    if [[ -z "$config_name" ]]; then
+        echo "Usage: ccm-claude <config-name> [-y] [claude-args...]" >&2
+        return 1
+    fi
+
+    eval "$(command ccm use "$config_name" --temp)"
+    if [[ "$skip_perms" == true ]]; then
+        claude --dangerously-skip-permissions "${claude_args[@]}"
+    else
+        claude "${claude_args[@]}"
+    fi
+}
+
+alias ccm-c='ccm-claude'
 # </ccm-init>
 """.Replace("\r\n", "\n");
 
@@ -73,6 +136,38 @@ function ccm
     else
         command ccm $argv
     end
+end
+
+function ccm-claude
+    set -l skip_perms false
+    set -l config_name ""
+    set -l claude_args
+
+    for arg in $argv
+        if test "$arg" = "-y"
+            set skip_perms true
+        else if test -z "$config_name"
+            set config_name $arg
+        else
+            set -a claude_args $arg
+        end
+    end
+
+    if test -z "$config_name"
+        echo "Usage: ccm-claude <config-name> [-y] [claude-args...]" >&2
+        return 1
+    end
+
+    eval (command ccm use $config_name --temp)
+    if test "$skip_perms" = true
+        claude --dangerously-skip-permissions $claude_args
+    else
+        claude $claude_args
+    end
+end
+
+function ccm-c
+    ccm-claude $argv
 end
 # </ccm-init>
 """.Replace("\r\n", "\n");
